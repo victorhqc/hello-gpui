@@ -1,7 +1,4 @@
-use gpui::{
-    div, prelude::*, px, rgb, rgba, size, App, Application, Bounds, Context, Fill, SharedString,
-    TextStyle, Window, WindowBounds, WindowOptions,
-};
+use gpui::{div, prelude::*, px, Context, Fill, SharedString, Window};
 
 pub struct RoundButton<F> {
     pub text: SharedString,

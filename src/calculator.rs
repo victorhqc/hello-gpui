@@ -1,8 +1,5 @@
 use crate::round_button::RoundButton;
-use gpui::{
-    div, prelude::*, px, rgb, rgba, size, App, Application, Bounds, Context, Entity, Rgba,
-    SharedString, TextStyle, Window, WindowBounds, WindowOptions,
-};
+use gpui::{div, prelude::*, px, rgb, rgba, Context, Entity, Rgba, SharedString, Window};
 
 pub struct Operand {
     symbol: Option<SharedString>,
@@ -25,7 +22,7 @@ impl Default for Calculator {
 }
 
 impl Render for Calculator {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let light_gray = rgb(0x707070);
         let dark_gray = rgb(0x515251);
         let orange = rgb(0xff9600);
@@ -125,7 +122,6 @@ impl Render for Calculator {
             .children([
                 div().w_full().mt_9(),
                 div()
-                    // .bg(gpui::blue())
                     .w_full()
                     .flex()
                     .flex_row()
@@ -134,7 +130,6 @@ impl Render for Calculator {
                     .text_color(rgb(0xcccccc))
                     .children([div().child("7+"), div().child("6")]),
                 div()
-                    // .bg(gpui::red())
                     .w_full()
                     .flex()
                     .flex_row()
