@@ -9,6 +9,10 @@ mod round_button;
 fn main() {
     println!("Starting calculator");
     Application::new().run(|cx: &mut App| {
+        #[cfg(not(debug_assertions))]
+        let bounds = Bounds::centered(None, size(px(198.), px(350.0)), cx);
+
+        #[cfg(debug_assertions)]
         let bounds = bounds_top_right(
             cx,
             None,
