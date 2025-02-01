@@ -38,7 +38,7 @@ fn main() {
         };
 
         cx.open_window(window_options, |_, cx| {
-            cx.new(|_| calculator::Calculator::default())
+            cx.new(|_| calculator::component::Calculator::default())
         })
         .unwrap();
     });

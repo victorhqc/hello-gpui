@@ -31,16 +31,16 @@ impl Render for Calculator {
             text: "AC".into(),
             bg: light_gray,
         });
-        let sign_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "+/-".into(),
+        let plus_minus_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
+            text: "±".into(),
             bg: light_gray,
         });
-        let percentage_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "%".into(),
+        let percent_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
+            text: "％".into(),
             bg: light_gray,
         });
         let division_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "%".into(),
+            text: "÷".into(),
             bg: orange,
         });
 
@@ -57,7 +57,7 @@ impl Render for Calculator {
             bg: dark_gray,
         });
         let times_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "x".into(),
+            text: "⨉".into(),
             bg: orange,
         });
 
@@ -74,7 +74,7 @@ impl Render for Calculator {
             bg: dark_gray,
         });
         let minus_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "-".into(),
+            text: "－".into(),
             bg: orange,
         });
 
@@ -91,7 +91,7 @@ impl Render for Calculator {
             bg: dark_gray,
         });
         let plus_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "+".into(),
+            text: "＋".into(),
             bg: orange,
         });
 
@@ -108,7 +108,7 @@ impl Render for Calculator {
             bg: dark_gray,
         });
         let equals_btn: Entity<RoundButton<Rgba>> = cx.new(|_cx| RoundButton {
-            text: "=".into(),
+            text: "＝".into(),
             bg: orange,
         });
 
@@ -147,8 +147,8 @@ impl Render for Calculator {
                     .children([
                         // Row 1
                         div().child(ac_btn),
-                        div().child(sign_btn),
-                        div().child(percentage_btn),
+                        div().child(plus_minus_btn),
+                        div().child(percent_btn),
                         div().child(division_btn),
                         // Row 2
                         div().child(seven_btn),
