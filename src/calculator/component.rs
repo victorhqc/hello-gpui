@@ -187,12 +187,12 @@ impl Render for Calculator {
         let four_btn = RoundButton::new("four_btn", "4".into(), Some(dark_gray));
         let five_btn = RoundButton::new("five_btn", "5".into(), Some(dark_gray));
         let six_btn = RoundButton::new("six_btn", "6".into(), Some(dark_gray));
-        let minus_btn = RoundButton::new("minus_btn", OperationButton::Minus.into(), Some(orange));
+        let minus_btn = RoundButton::new("minus_btn", "－".into(), Some(orange));
 
         let one_btn = RoundButton::new("one_btn", "1".into(), Some(dark_gray));
         let two_btn = RoundButton::new("two_btn", "2".into(), Some(dark_gray));
         let three_btn = RoundButton::new("three_btn", "3".into(), Some(dark_gray));
-        let plus_btn = RoundButton::new("plus_btn", OperationButton::Plus.into(), Some(orange));
+        let plus_btn = RoundButton::new("plus_btn", "＋".into(), Some(orange));
 
         let calc_btn = RoundButton::new("calc_btn", "calc".into(), Some(dark_gray));
         let zero_btn = RoundButton::new("zero_btn", "0".into(), Some(dark_gray));
@@ -240,7 +240,14 @@ impl Render for Calculator {
                         })),
                         plus_minus_btn,
                         percent_btn,
-                        division_btn,
+                        division_btn.on_click(cx.listener(|this, evt, _, cx| {
+                            Self::handle_operation_press(
+                                this,
+                                Button::Operation(OperationButton::Division),
+                                evt,
+                                cx,
+                            );
+                        })),
                         // Row 2
                         seven_btn.on_click(cx.listener(|this, evt, _, cx| {
                             Self::handle_number_press(
@@ -266,7 +273,14 @@ impl Render for Calculator {
                                 cx,
                             )
                         })),
-                        times_btn,
+                        times_btn.on_click(cx.listener(|this, evt, _, cx| {
+                            Self::handle_operation_press(
+                                this,
+                                Button::Operation(OperationButton::Times),
+                                evt,
+                                cx,
+                            );
+                        })),
                         // Row 3
                         four_btn.on_click(cx.listener(|this, evt, _, cx| {
                             Self::handle_number_press(
@@ -428,8 +442,8 @@ impl Into<i128> for NumericButton {
 impl Display for OperationButton {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OperationButton::Plus => f.write_str("＋"),
-            OperationButton::Minus => f.write_str("－"),
+            OperationButton::Plus => f.write_str("+"),
+            OperationButton::Minus => f.write_str("-"),
             OperationButton::Times => f.write_str("⨉"),
             OperationButton::Division => f.write_str("÷"),
             OperationButton::Equals => f.write_str("＝"),
