@@ -176,6 +176,11 @@ impl Calculator {
                     let mut new_value = format!("{}", val);
                     new_value.pop();
 
+                    if new_value.is_empty() && operands_len > 1 {
+                        self.calculation.operands.pop();
+                        return;
+                    }
+
                     let new_value: i128 = new_value.parse().unwrap_or(0);
 
                     operand.value = OperandValue::Integer(new_value);
