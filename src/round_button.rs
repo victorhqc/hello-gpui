@@ -1,24 +1,32 @@
 use gpui::{
-    div, prelude::*, px, rgb, App, ClickEvent, ElementId, Fill, Rgba, SharedString, Window,
+    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, Fill, MouseButton, Rgba,
+    SharedString, Window,
 };
 
+type ClickFn = dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static;
+
 #[derive(IntoElement)]
-pub struct RoundButton<F>
-where
-    F: Into<Fill> + 'static + Sized + Copy,
-{
+pub struct RoundButton {
     pub id: ElementId,
     pub label: SharedString,
-    pub bg: F,
-    on_click: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>>,
+    pub bg: Rgba,
+    active_bg: Rgba,
+    is_disabled: bool,
+    on_click: Option<Box<ClickFn>>,
 }
 
-impl RoundButton<Rgba> {
+impl RoundButton {
     pub fn new(id: impl Into<ElementId>, label: SharedString, bg: Option<Rgba>) -> Self {
+        let bg = bg.unwrap_or_else(|| rgb(0x000000));
+
+        let active_bg = bg.blend(rgba(0xffffff30));
+
         RoundButton {
             id: id.into(),
             label,
-            bg: bg.unwrap_or_else(|| rgb(0x000000)),
+            bg,
+            active_bg,
+            is_disabled: false,
             on_click: None,
         }
     }
@@ -32,19 +40,21 @@ impl RoundButton<Rgba> {
     }
 }
 
-impl<F> RenderOnce for RoundButton<F>
-where
-    F: Into<Fill> + 'static + Sized + Copy,
-{
+impl RenderOnce for RoundButton {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         div()
-            .id(self.id)
+            .id(self.id.clone())
             .bg(self.bg)
+            .on_mouse_down(MouseButton::Left, |_evt, _win, _app| {})
+            .on_mouse_up(MouseButton::Left, |_evt, _win, _app| println!("mouse up"))
             .w(px(42.))
             .h(px(42.))
             .rounded_full()
             .when_some(self.on_click, |this, on_click| {
                 this.on_click(move |evt, win, app| (on_click)(evt, win, app))
+            })
+            .when(!self.is_disabled, |this| {
+                this.active(|this| this.bg(self.active_bg))
             })
             .child(
                 div()
