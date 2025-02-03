@@ -1,6 +1,5 @@
 use gpui::{
-    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, EventEmitter, Rgba, SharedString,
-    Window,
+    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, Rgba, SharedString, Window,
 };
 
 type ClickFn = dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static;
