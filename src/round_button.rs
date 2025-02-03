@@ -1,6 +1,6 @@
 use gpui::{
-    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, Fill, MouseButton, Rgba,
-    SharedString, Window,
+    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, EventEmitter, Rgba, SharedString,
+    Window,
 };
 
 type ClickFn = dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static;
@@ -8,11 +8,11 @@ type ClickFn = dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static;
 #[derive(IntoElement)]
 pub struct RoundButton {
     pub id: ElementId,
-    pub label: SharedString,
     pub bg: Rgba,
     active_bg: Rgba,
     is_disabled: bool,
     on_click: Option<Box<ClickFn>>,
+    label: SharedString,
 }
 
 impl RoundButton {
@@ -38,6 +38,12 @@ impl RoundButton {
         self.on_click = Some(Box::new(handler));
         self
     }
+
+    pub fn label(mut self, label: SharedString) -> Self {
+        self.label = label;
+
+        self
+    }
 }
 
 impl RenderOnce for RoundButton {
@@ -60,7 +66,7 @@ impl RenderOnce for RoundButton {
                     .justify_center()
                     .items_center()
                     .py(px(9.))
-                    .child(self.label.clone()),
+                    .child(self.label),
             )
     }
 }

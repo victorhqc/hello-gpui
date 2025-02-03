@@ -1,7 +1,9 @@
 use std::fmt::Display;
 
 use crate::round_button::RoundButton;
-use gpui::{div, prelude::*, px, rgb, rgba, ClickEvent, Context, SharedString, Window};
+use gpui::{
+    actions, div, prelude::*, px, rgb, rgba, Action, ClickEvent, Context, SharedString, Window,
+};
 
 #[derive(Debug)]
 pub enum OperandValue {
@@ -65,10 +67,8 @@ impl Calculator {
 
     fn handle_ac_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
         if let Button::Ac = value {
-            self.remove_from_result();
+            self.remove_from_result(cx);
         };
-
-        cx.notify();
     }
 
     fn render_result(&self) -> impl IntoElement {
@@ -93,8 +93,18 @@ impl Calculator {
         result
     }
 
+    fn render_ac_label(&self) -> SharedString {
+        if self.is_empty() {
+            return "AC".into();
+        }
+
+        "<-".into()
+    }
+
     fn append_number(&mut self, value: NumericButton, cx: &mut Context<Self>) {
         let current_operand = self.calculation.operands.last_mut();
+
+        // ToggleAcButtonIcon::
 
         if let Some(&mut ref mut operand) = current_operand {
             if operand.symbol.is_some() {
@@ -138,9 +148,12 @@ impl Calculator {
         if let Some(&mut ref mut operand) = current_operand {
             operand.symbol = Some(symbol)
         }
+
+        cx.notify();
     }
 
-    fn remove_from_result(&mut self) {
+    fn remove_from_result(&mut self, cx: &mut Context<Self>) {
+        let operands_len = self.calculation.operands.len();
         let current_operand = self.calculation.operands.last_mut();
 
         if let Some(&mut ref mut operand) = current_operand {
@@ -153,6 +166,10 @@ impl Calculator {
             match operand.value {
                 OperandValue::Integer(val) => {
                     if val == 0 {
+                        if operands_len > 1 {
+                            self.calculation.operands.pop();
+                        }
+
                         return;
                     };
 
@@ -166,6 +183,24 @@ impl Calculator {
                 OperandValue::Float(val) => {}
             }
         };
+
+        cx.notify();
+    }
+
+    fn is_empty(&self) -> bool {
+        if self.calculation.operands.is_empty() {
+            return true;
+        }
+
+        if self.calculation.operands.len() > 1 {
+            return false;
+        }
+
+        if let Some(operand) = self.calculation.operands.first() {
+            return operand.symbol.is_none() && operand.value.is_empty();
+        }
+
+        false
     }
 }
 
@@ -175,7 +210,11 @@ impl Render for Calculator {
         let dark_gray = rgb(0x515251);
         let orange = rgb(0xff9600);
 
-        // ␡
+        // let ac_btn = if !self.is_empty() {
+        //     RoundButton::new("ac_btn", "AC".into(), Some(light_gray))
+        // } else {
+        //     RoundButton::new("ac_btn", "␡".into(), Some(light_gray))
+        // };
 
         let ac_btn = RoundButton::new("ac_btn", "AC".into(), Some(light_gray));
         let plus_minus_btn = RoundButton::new("plus_minus_btn", "±".into(), Some(light_gray));
@@ -242,9 +281,9 @@ impl Render for Calculator {
                     .gap(px(5.))
                     .children([
                         // Row 1
-                        ac_btn.on_click(cx.listener(|this, evt, _, cx| {
-                            Self::handle_ac_press(this, Button::Ac, evt, cx)
-                        })),
+                        ac_btn.label(self.render_ac_label()).on_click(cx.listener(
+                            |this, evt, _, cx| Self::handle_ac_press(this, Button::Ac, evt, cx),
+                        )),
                         plus_minus_btn,
                         percent_btn,
                         division_btn.on_click(cx.listener(|this, evt, _, cx| {
@@ -473,8 +512,19 @@ impl Display for OperandValue {
     }
 }
 
-// impl OperandValue {
-//     pub fn value(&self) {
+impl OperandValue {
+    pub fn is_empty(&self) -> bool {
+        match self {
+            OperandValue::Integer(v) => v == &0,
+            OperandValue::Float(v) => v == &0.,
+        }
+    }
+}
 
-//     }
-// }
+actions!(
+    calculator,
+    [
+        Backspace, PlusMinus, Percent, Zero, One, Two, Three, Four, Five, Six, Seven, Eight, Nine,
+        Plus, Minus, Times, Division, Equals,
+    ]
+);
