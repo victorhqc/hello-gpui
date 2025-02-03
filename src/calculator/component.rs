@@ -40,7 +40,6 @@ pub struct Calculator {
 
 impl Calculator {
     fn handle_number_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
-        // let target = event.
         println!("target {:?}", value);
 
         if let Button::Number(num) = value {
@@ -76,7 +75,6 @@ impl Calculator {
         let mut result = div().w_full().flex().flex_row().justify_end();
 
         if let Some(calculation) = &self.calculation.result {
-            // if self.calculation.operands.is_empty() {
             let res: SharedString = format!("{}", calculation).into();
 
             return result.child(res);
@@ -110,7 +108,6 @@ impl Calculator {
                 OperandValue::Integer(val) => {
                     let value: i128 = value.into();
                     let new_value = format!("{}{}", val, value);
-                    // operand.
 
                     let new_value: i128 = new_value.parse().unwrap();
 
@@ -141,21 +138,31 @@ impl Calculator {
         if let Some(&mut ref mut operand) = current_operand {
             operand.symbol = Some(symbol)
         }
-
-        // match operation {
-        //     OperationButton::Plus => {
-
-        //     }
-        //     _ => println!("Not implemented yet")
-        // }
     }
 
     fn remove_from_result(&mut self) {
         let current_operand = self.calculation.operands.last_mut();
 
         if let Some(&mut ref mut operand) = current_operand {
+            if operand.symbol.is_some() {
+                operand.symbol = None;
+
+                return;
+            }
+
             match operand.value {
-                OperandValue::Integer(val) => {}
+                OperandValue::Integer(val) => {
+                    if val == 0 {
+                        return;
+                    };
+
+                    let mut new_value = format!("{}", val);
+                    new_value.pop();
+
+                    let new_value: i128 = new_value.parse().unwrap_or(0);
+
+                    operand.value = OperandValue::Integer(new_value);
+                }
                 OperandValue::Float(val) => {}
             }
         };

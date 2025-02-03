@@ -45,8 +45,6 @@ impl RenderOnce for RoundButton {
         div()
             .id(self.id.clone())
             .bg(self.bg)
-            .on_mouse_down(MouseButton::Left, |_evt, _win, _app| {})
-            .on_mouse_up(MouseButton::Left, |_evt, _win, _app| println!("mouse up"))
             .w(px(42.))
             .h(px(42.))
             .rounded_full()
