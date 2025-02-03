@@ -1,9 +1,7 @@
 use std::fmt::Display;
 
 use crate::round_button::RoundButton;
-use gpui::{
-    actions, div, prelude::*, px, rgb, rgba, Action, ClickEvent, Context, SharedString, Window,
-};
+use gpui::{actions, div, prelude::*, px, rgb, rgba, ClickEvent, Context, SharedString, Window};
 
 #[derive(Debug)]
 pub enum OperandValue {
@@ -214,12 +212,6 @@ impl Render for Calculator {
         let light_gray = rgb(0x707070);
         let dark_gray = rgb(0x515251);
         let orange = rgb(0xff9600);
-
-        // let ac_btn = if !self.is_empty() {
-        //     RoundButton::new("ac_btn", "AC".into(), Some(light_gray))
-        // } else {
-        //     RoundButton::new("ac_btn", "␡".into(), Some(light_gray))
-        // };
 
         let ac_btn = RoundButton::new("ac_btn", "AC".into(), Some(light_gray));
         let plus_minus_btn = RoundButton::new("plus_minus_btn", "±".into(), Some(light_gray));
