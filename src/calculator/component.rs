@@ -317,9 +317,9 @@ pub enum OperationButton {
     Equals,
 }
 
-impl Into<usize> for NumericButton {
-    fn into(self) -> usize {
-        match self {
+impl From<NumericButton> for usize {
+    fn from(value: NumericButton) -> Self {
+        match value {
             NumericButton::Zero => 0,
             NumericButton::One => 1,
             NumericButton::Two => 2,
@@ -346,15 +346,15 @@ impl Display for OperationButton {
     }
 }
 
-impl Into<SharedString> for OperationButton {
-    fn into(self) -> SharedString {
-        format!("{}", self).into()
+impl From<OperationButton> for SharedString {
+    fn from(value: OperationButton) -> Self {
+        format!("{}", value).into()
     }
 }
 
-impl Into<Operation> for OperationButton {
-    fn into(self) -> Operation {
-        match self {
+impl From<OperationButton> for Operation {
+    fn from(value: OperationButton) -> Self {
+        match value {
             OperationButton::Plus => Operation::Plus,
             OperationButton::Minus => Operation::Minus,
             OperationButton::Times => Operation::Times,
