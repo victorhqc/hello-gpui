@@ -1,37 +1,8 @@
 use std::fmt::Display;
 
+use super::calculation::{Calculation, Operation};
 use crate::round_button::RoundButton;
 use gpui::{actions, div, prelude::*, px, rgb, rgba, ClickEvent, Context, SharedString, Window};
-
-#[derive(Debug)]
-pub enum OperandValue {
-    Integer(i128),
-    Float(f64),
-}
-
-#[derive(Debug)]
-pub struct Operand {
-    symbol: Option<SharedString>,
-    value: OperandValue,
-}
-
-#[derive(Debug)]
-pub struct Calculation {
-    result: Option<OperandValue>,
-    operands: Vec<Operand>,
-}
-
-impl Default for Calculation {
-    fn default() -> Self {
-        Self {
-            result: None,
-            operands: vec![Operand {
-                symbol: None,
-                value: OperandValue::Integer(0),
-            }],
-        }
-    }
-}
 
 #[derive(Default, Debug)]
 pub struct Calculator {
@@ -70,29 +41,16 @@ impl Calculator {
     }
 
     fn render_result(&self) -> impl IntoElement {
-        let mut result = div().w_full().flex().flex_row().justify_end();
-
-        if let Some(calculation) = &self.calculation.result {
-            let res: SharedString = format!("{}", calculation).into();
-
-            return result.child(res);
-        }
-
-        for operand in &self.calculation.operands {
-            let mut children: Vec<SharedString> = vec![format!("{}", operand.value).into()];
-
-            if let Some(symbol) = &operand.symbol {
-                children.push(symbol.clone())
-            }
-
-            result = result.children(children);
-        }
-
-        result
+        div()
+            .w_full()
+            .flex()
+            .flex_row()
+            .justify_end()
+            .child(self.calculation.to_shared_string())
     }
 
     fn render_ac_label(&self) -> SharedString {
-        if self.is_empty() {
+        if self.calculation.is_empty() {
             return "AC".into();
         }
 
@@ -100,110 +58,21 @@ impl Calculator {
     }
 
     fn append_number(&mut self, value: NumericButton, cx: &mut Context<Self>) {
-        let current_operand = self.calculation.operands.last_mut();
-
-        // ToggleAcButtonIcon::
-
-        if let Some(&mut ref mut operand) = current_operand {
-            if operand.symbol.is_some() {
-                return self.calculation.operands.push(Operand {
-                    value: OperandValue::Integer(value.into()),
-                    symbol: None,
-                });
-            }
-
-            match operand.value {
-                OperandValue::Integer(val) => {
-                    let value: i128 = value.into();
-                    let new_value = format!("{}{}", val, value);
-
-                    let new_value: i128 = new_value.parse().unwrap();
-
-                    operand.value = OperandValue::Integer(new_value);
-                }
-                OperandValue::Float(val) => {
-                    let value: f64 = value.into();
-                    let new_value = format!("{}{}", val, value);
-                    let new_value: f64 = new_value.parse().unwrap();
-
-                    operand.value = OperandValue::Float(new_value);
-                }
-            }
-        } else {
-            self.calculation.operands.push(Operand {
-                value: OperandValue::Integer(value.into()),
-                symbol: None,
-            });
-        }
+        self.calculation.append_number(value.into());
 
         cx.notify();
     }
 
     fn append_operation(&mut self, operation: OperationButton, cx: &mut Context<Self>) {
-        let symbol: SharedString = operation.into();
-        let current_operand = self.calculation.operands.last_mut();
-
-        if let Some(&mut ref mut operand) = current_operand {
-            operand.symbol = Some(symbol)
-        }
+        self.calculation.append_operation(operation.into());
 
         cx.notify();
     }
 
     fn remove_from_result(&mut self, cx: &mut Context<Self>) {
-        let operands_len = self.calculation.operands.len();
-        let current_operand = self.calculation.operands.last_mut();
-
-        if let Some(&mut ref mut operand) = current_operand {
-            if operand.symbol.is_some() {
-                operand.symbol = None;
-
-                return;
-            }
-
-            match operand.value {
-                OperandValue::Integer(val) => {
-                    if val == 0 {
-                        if operands_len > 1 {
-                            self.calculation.operands.pop();
-                        }
-
-                        return;
-                    };
-
-                    let mut new_value = format!("{}", val);
-                    new_value.pop();
-
-                    if new_value.is_empty() && operands_len > 1 {
-                        self.calculation.operands.pop();
-                        return;
-                    }
-
-                    let new_value: i128 = new_value.parse().unwrap_or(0);
-
-                    operand.value = OperandValue::Integer(new_value);
-                }
-                OperandValue::Float(val) => {}
-            }
-        };
+        self.calculation.remove_last();
 
         cx.notify();
-    }
-
-    fn is_empty(&self) -> bool {
-        if self.calculation.operands.is_empty() {
-            return true;
-        }
-
-        if self.calculation.operands.len() > 1 {
-            return false;
-        }
-
-        if let Some(operand) = self.calculation.operands.first() {
-            return operand.symbol.is_none() && operand.value.is_empty();
-        }
-
-        false
     }
 }
 
@@ -448,25 +317,8 @@ pub enum OperationButton {
     Equals,
 }
 
-impl Into<f64> for NumericButton {
-    fn into(self) -> f64 {
-        match self {
-            NumericButton::Zero => 0.,
-            NumericButton::One => 1.,
-            NumericButton::Two => 2.,
-            NumericButton::Three => 3.,
-            NumericButton::Four => 4.,
-            NumericButton::Five => 5.,
-            NumericButton::Six => 6.,
-            NumericButton::Seven => 7.,
-            NumericButton::Eight => 8.,
-            NumericButton::Nine => 9.,
-        }
-    }
-}
-
-impl Into<i128> for NumericButton {
-    fn into(self) -> i128 {
+impl Into<usize> for NumericButton {
+    fn into(self) -> usize {
         match self {
             NumericButton::Zero => 0,
             NumericButton::One => 1,
@@ -500,20 +352,14 @@ impl Into<SharedString> for OperationButton {
     }
 }
 
-impl Display for OperandValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Into<Operation> for OperationButton {
+    fn into(self) -> Operation {
         match self {
-            OperandValue::Integer(val) => f.write_str(&format!("{}", val)),
-            OperandValue::Float(val) => f.write_str(&format!("{}", val)),
-        }
-    }
-}
-
-impl OperandValue {
-    pub fn is_empty(&self) -> bool {
-        match self {
-            OperandValue::Integer(v) => v == &0,
-            OperandValue::Float(v) => v == &0.,
+            OperationButton::Plus => Operation::Plus,
+            OperationButton::Minus => Operation::Minus,
+            OperationButton::Times => Operation::Times,
+            OperationButton::Division => Operation::Division,
+            OperationButton::Equals => Operation::Equals,
         }
     }
 }

@@ -3,6 +3,9 @@ use gpui::{
     TitlebarOptions, WindowBounds, WindowOptions,
 };
 
+#[macro_use]
+extern crate dashu_macros;
+
 mod calculator;
 mod round_button;
 
@@ -18,8 +21,8 @@ fn main() {
             None,
             size(px(198.), px(350.0)),
             Point {
-                x: px(100.),
-                y: px(100.),
+                x: px(25.),
+                y: px(50.),
             },
         );
 
@@ -41,6 +44,7 @@ fn main() {
             cx.new(|_| calculator::component::Calculator::default())
         })
         .unwrap();
+        cx.activate(true);
     });
 }
 

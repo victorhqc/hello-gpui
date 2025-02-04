@@ -4,4 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dashu = "0.4.2"
+dashu-base = "0.4.1"
+dashu-float = "0.4.3"
+dashu-macros = "0.4.1"
 gpui = { git = "https://github.com/zed-industries/zed" }
