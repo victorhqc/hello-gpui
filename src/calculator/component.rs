@@ -259,7 +259,6 @@ impl Render for Calculator {
                     .justify_end()
                     .text_lg()
                     .text_color(rgb(0xcccccc))
-                    // .children([]),
                     .children([div().child("")]),
                 div()
                     .w_full()
@@ -267,6 +266,7 @@ impl Render for Calculator {
                     .flex_row()
                     .justify_end()
                     .text_2xl()
+                    .px(px(5.))
                     .child(self.render_result()),
                 div()
                     .w_full()
