@@ -1,9 +1,9 @@
 use dashu::Decimal;
-use dashu_float::DBig;
+use dashu_float::{round::mode::HalfAway, DBig, FBig};
 use gpui::SharedString;
-use std::{fmt::Display, str::FromStr};
+use std::{fmt::Display, ops::Add, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Division,
     Times,
@@ -12,26 +12,49 @@ pub enum Operation {
     Equals,
 }
 
-#[derive(Debug, Clone)]
-pub enum OperandValue {
-    Decimal(Decimal),
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Operand {
     operation: Option<Operation>,
-    value: OperandValue,
+    value: Decimal,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Calculation {
-    result: Option<OperandValue>,
+    past_operands: Vec<Operand>,
     operands: Vec<Operand>,
 }
 
 impl Calculation {
+    pub fn calculate(&mut self) {
+        self.past_operands = self.operands.clone();
+
+        let (value, _): (FBig<HalfAway, 10>, Option<Operation>) =
+            self.operands
+                .iter()
+                .fold((dbig!(0), None), |(acc, operation), operand| {
+                    if let Some(op) = operation {
+                        let new_value = match op {
+                            Operation::Plus => {
+                                println!("{} + {}", acc, operand.value);
+                                acc.add(operand.value.clone()).with_precision(10)
+                            }
+                            _ => todo!(),
+                        };
+
+                        return (new_value.value(), operand.operation.clone());
+                    };
+
+                    (operand.value.clone(), operand.operation.clone())
+                });
+
+        self.operands = vec![Operand {
+            operation: None,
+            value,
+        }]
+    }
+
     pub fn is_empty(&self) -> bool {
-        if self.operands.is_empty() || self.result.is_some() {
+        if self.operands.is_empty() || !self.past_operands.is_empty() {
             return true;
         }
 
@@ -40,17 +63,13 @@ impl Calculation {
         }
 
         if let Some(operand) = self.operands.first() {
-            return operand.operation.is_none() && operand.value.is_empty();
+            return operand.operation.is_none() && operand.value.eq(&dbig!(0));
         }
 
         false
     }
 
-    pub fn to_shared_string(&self) -> SharedString {
-        if let Some(result) = &self.result {
-            return SharedString::new(result.to_string());
-        };
-
+    pub fn current_operation_string(&self) -> SharedString {
         let mut str = String::new();
 
         for operand in &self.operands {
@@ -72,40 +91,34 @@ impl Calculation {
                 let new_val = DBig::from(num);
 
                 self.operands.push(Operand {
-                    value: OperandValue::Decimal(new_val),
+                    value: new_val,
                     operation: None,
                 });
 
                 return;
             }
 
-            match operand.value.clone() {
-                OperandValue::Decimal(v) => {
-                    let (trunc, fract) = v.split_at_point();
+            let (trunc, fract) = operand.value.clone().split_at_point();
 
-                    let zero = dbig!(0);
-                    let (trunc, fract) = if fract.gt(&zero) && trunc.ne(&zero) {
-                        let stringified = fract.to_string();
+            let zero = dbig!(0);
+            let (trunc, fract) = if fract.gt(&zero) && trunc.ne(&zero) {
+                let stringified = fract.to_string();
 
-                        let appended = format!("{}{}", stringified, num);
+                let appended = format!("{}{}", stringified, num);
 
-                        (trunc.to_string(), appended)
-                    } else {
-                        let stringified = trunc.to_string();
+                (trunc.to_string(), appended)
+            } else {
+                let stringified = trunc.to_string();
 
-                        let appended = format!("{}{}", stringified, num);
+                let appended = format!("{}{}", stringified, num);
 
-                        (appended, fract.to_string())
-                    };
+                (appended, fract.to_string())
+            };
 
-                    operand.value = OperandValue::Decimal(
-                        DBig::from_str(&format!("{}.{}", trunc, fract)).unwrap(),
-                    );
-                }
-            }
+            operand.value = DBig::from_str(&format!("{}.{}", trunc, fract)).unwrap();
         } else {
             self.operands.push(Operand {
-                value: OperandValue::Decimal(DBig::from(num)),
+                value: DBig::from(num),
                 operation: None,
             })
         }
@@ -129,35 +142,32 @@ impl Calculation {
                 return;
             }
 
-            match operand.value.clone() {
-                OperandValue::Decimal(val) => {
-                    if val.eq(&dbig!(0)) {
-                        if operands_len > 1 {
-                            self.operands.pop();
-                        }
+            let val = operand.value.clone();
 
-                        return;
-                    };
-
-                    let mut new_value = format!("{}", val);
-                    new_value.pop();
-
-                    if new_value.is_empty() && operands_len > 1 {
-                        self.operands.pop();
-                        return;
-                    }
-
-                    let new_value = if new_value.is_empty() {
-                        "0".to_string()
-                    } else {
-                        new_value
-                    };
-
-                    let new_value = DBig::from_str(&new_value).unwrap();
-
-                    operand.value = OperandValue::Decimal(new_value);
+            if val.eq(&dbig!(0)) {
+                if operands_len > 1 {
+                    self.operands.pop();
                 }
+
+                return;
+            };
+
+            let mut new_value = format!("{}", val);
+            new_value.pop();
+
+            if new_value.is_empty() && operands_len > 1 {
+                self.operands.pop();
+                return;
             }
+
+            let new_value = if new_value.is_empty() {
+                "0".to_string()
+            } else {
+                new_value
+            };
+
+            let new_value = DBig::from_str(&new_value).unwrap();
+            operand.value = new_value;
         };
     }
 }
@@ -165,27 +175,8 @@ impl Calculation {
 impl Default for Calculation {
     fn default() -> Self {
         Self {
-            result: None,
-            operands: vec![Operand {
-                operation: None,
-                value: OperandValue::Decimal(dbig!(0)),
-            }],
-        }
-    }
-}
-
-impl Display for OperandValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OperandValue::Decimal(v) => f.write_str(&v.to_string()),
-        }
-    }
-}
-
-impl OperandValue {
-    pub fn is_empty(&self) -> bool {
-        match self {
-            OperandValue::Decimal(v) => v.eq(&dbig!(0)),
+            past_operands: vec![],
+            operands: vec![Operand::default()],
         }
     }
 }
@@ -202,27 +193,264 @@ impl Display for Operation {
     }
 }
 
+impl Default for Operand {
+    fn default() -> Self {
+        Operand {
+            operation: None,
+            value: dbig!(0),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_sum_calculation {
+    use super::*;
+
+    #[test]
+    fn calculate_with_only_one_operand() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: dbig!(5),
+            }],
+        };
+        calculation.calculate();
+
+        assert_eq!(calculation, calculation.clone());
+    }
+
+    #[test]
+    fn calculate_with_only_one_operand_and_operation() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: Some(Operation::Plus),
+                value: dbig!(5),
+            }],
+        };
+        calculation.calculate();
+
+        assert_eq!(calculation, calculation.clone());
+    }
+
+    #[test]
+    fn calculate_sum_two_values() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![
+                Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(5),
+                },
+                Operand {
+                    operation: None,
+                    value: dbig!(5),
+                },
+            ],
+        };
+        calculation.calculate();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![
+                    Operand {
+                        operation: Some(Operation::Plus),
+                        value: dbig!(5),
+                    },
+                    Operand {
+                        operation: None,
+                        value: dbig!(5),
+                    }
+                ],
+                operands: vec![Operand {
+                    operation: None,
+                    value: dbig!(10)
+                }]
+            }
+        );
+    }
+
+    #[test]
+    fn calculate_sum_three_values() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![
+                Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(5),
+                },
+                Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(5),
+                },
+                Operand {
+                    operation: None,
+                    value: dbig!(5.5),
+                },
+            ],
+        };
+        calculation.calculate();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![
+                    Operand {
+                        operation: Some(Operation::Plus),
+                        value: dbig!(5),
+                    },
+                    Operand {
+                        operation: Some(Operation::Plus),
+                        value: dbig!(5),
+                    },
+                    Operand {
+                        operation: None,
+                        value: dbig!(5.5),
+                    },
+                ],
+                operands: vec![Operand {
+                    operation: None,
+                    value: dbig!(15.5)
+                }]
+            }
+        );
+    }
+}
+
+// #[cfg(test)]
+// mod test_append_number {
+//     use super::*;
+
+//     #[test]
+//     fn append_when_empty() {
+//         let mut calculation = Calculation {
+//             past_operands: vec![],
+//             operands: Vec::new(),
+//         };
+
+//         calculation.append_number(5);
+//         assert_eq!(
+//             calculation,
+//             Calculation {
+//                 past_operands: vec![],
+//                 operands: vec![Operand {
+//                     operation: None,
+//                     value: OperandValue::Decimal(dbig!(5)),
+//                 }],
+//             }
+//         );
+//     }
+// }
+
+#[cfg(test)]
+mod append_operation {
+    use super::*;
+
+    #[test]
+    fn appends_when_empty() {
+        let mut calculation = Calculation::default();
+        calculation.append_operation(Operation::Plus);
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(0),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn appends_when_having_value() {
+        let mut calculation = Calculation::default();
+        calculation.append_number(5);
+        calculation.append_operation(Operation::Plus);
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(5),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn overrides_operation_on_multiple_appends() {
+        let mut calculation = Calculation::default();
+        calculation.append_number(5);
+        calculation.append_operation(Operation::Plus);
+        calculation.append_operation(Operation::Minus);
+        calculation.append_operation(Operation::Times);
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: Some(Operation::Times),
+                    value: dbig!(5),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn appends_operation_on_multiple_operands() {
+        let mut calculation = Calculation::default();
+        calculation.append_number(5);
+        calculation.append_operation(Operation::Times);
+        calculation.append_number(10);
+        calculation.append_operation(Operation::Minus);
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![
+                    Operand {
+                        operation: Some(Operation::Times),
+                        value: dbig!(5),
+                    },
+                    Operand {
+                        operation: Some(Operation::Minus),
+                        value: dbig!(10),
+                    },
+                ],
+            }
+        );
+    }
+}
+
 #[cfg(test)]
 mod test_is_empty {
     use super::*;
 
     #[test]
     fn is_empty_when_no_operands() {
-        let calculation = Calculation {
-            result: None,
-            operands: Vec::new(),
-        };
+        let calculation = Calculation::default();
 
         assert!(calculation.is_empty());
     }
 
     #[test]
-    fn is_empty_when_having_result() {
+    fn is_empty_when_having_past_operandsresult() {
         let calculation = Calculation {
-            result: Some(OperandValue::Decimal(dbig!(1))),
+            past_operands: vec![Operand {
+                operation: None,
+                value: dbig!(1),
+            }],
             operands: vec![Operand {
                 operation: None,
-                value: OperandValue::Decimal(dbig!(1)),
+                value: dbig!(1),
             }],
         };
 
@@ -232,10 +460,10 @@ mod test_is_empty {
     #[test]
     fn is_empty_when_operand_value_is_zero() {
         let calculation = Calculation {
-            result: None,
+            past_operands: vec![],
             operands: vec![Operand {
                 operation: None,
-                value: OperandValue::Decimal(dbig!(0)),
+                value: dbig!(0),
             }],
         };
 
@@ -245,10 +473,10 @@ mod test_is_empty {
     #[test]
     fn is_not_empty_when_having_operands() {
         let calculation = Calculation {
-            result: None,
+            past_operands: vec![],
             operands: vec![Operand {
                 operation: None,
-                value: OperandValue::Decimal(dbig!(1)),
+                value: dbig!(1),
             }],
         };
 
@@ -258,10 +486,10 @@ mod test_is_empty {
     #[test]
     fn is_not_empty_when_having_symbol() {
         let calculation = Calculation {
-            result: None,
+            past_operands: vec![],
             operands: vec![Operand {
                 operation: Some(Operation::Times),
-                value: OperandValue::Decimal(dbig!(0)),
+                value: dbig!(0),
             }],
         };
 
@@ -271,17 +499,8 @@ mod test_is_empty {
     #[test]
     fn is_not_empty_when_having_multiple_operands() {
         let calculation = Calculation {
-            result: None,
-            operands: vec![
-                Operand {
-                    operation: None,
-                    value: OperandValue::Decimal(dbig!(0)),
-                },
-                Operand {
-                    operation: None,
-                    value: OperandValue::Decimal(dbig!(0)),
-                },
-            ],
+            past_operands: vec![],
+            operands: vec![Operand::default(), Operand::default()],
         };
 
         assert!(!calculation.is_empty());
