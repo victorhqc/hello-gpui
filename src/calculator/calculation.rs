@@ -314,6 +314,44 @@ mod test_sum_calculation {
             }
         );
     }
+
+    #[test]
+    fn calculate_with_negative_value() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![
+                Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(-10),
+                },
+                Operand {
+                    operation: None,
+                    value: dbig!(5),
+                },
+            ],
+        };
+        calculation.calculate();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![
+                    Operand {
+                        operation: Some(Operation::Plus),
+                        value: dbig!(-10),
+                    },
+                    Operand {
+                        operation: None,
+                        value: dbig!(5),
+                    }
+                ],
+                operands: vec![Operand {
+                    operation: None,
+                    value: dbig!(-5)
+                }]
+            }
+        );
+    }
 }
 
 // #[cfg(test)]
