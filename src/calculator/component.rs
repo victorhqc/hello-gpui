@@ -46,7 +46,7 @@ impl Calculator {
             .flex()
             .flex_row()
             .justify_end()
-            .child(self.calculation.to_shared_string())
+            .child(self.calculation.current_operation_string())
     }
 
     fn render_ac_label(&self) -> SharedString {
