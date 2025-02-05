@@ -14,7 +14,9 @@ impl Calculator {
         println!("target {:?}", value);
 
         if let Button::Number(num) = value {
-            self.append_number(num, cx);
+            self.calculation.append_number(num.into());
+
+            cx.notify();
         };
     }
 
@@ -27,16 +29,19 @@ impl Calculator {
         if let Button::Operation(op) = value {
             match op {
                 OperationButton::Equals => {
-                    println!("Calculate")
+                    self.calculation.calculate();
                 }
-                _ => self.append_operation(op, cx),
-            }
+                _ => self.calculation.append_operation(op.into()),
+            };
+
+            cx.notify();
         }
     }
 
     fn handle_ac_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
         if let Button::Ac = value {
-            self.remove_from_result(cx);
+            self.calculation.remove_last();
+            cx.notify();
         };
     }
 
@@ -55,24 +60,6 @@ impl Calculator {
         }
 
         "<-".into()
-    }
-
-    fn append_number(&mut self, value: NumericButton, cx: &mut Context<Self>) {
-        self.calculation.append_number(value.into());
-
-        cx.notify();
-    }
-
-    fn append_operation(&mut self, operation: OperationButton, cx: &mut Context<Self>) {
-        self.calculation.append_operation(operation.into());
-
-        cx.notify();
-    }
-
-    fn remove_from_result(&mut self, cx: &mut Context<Self>) {
-        self.calculation.remove_last();
-
-        cx.notify();
     }
 }
 
