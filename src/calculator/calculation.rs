@@ -31,7 +31,7 @@ pub struct Calculation {
 
 impl Calculation {
     pub fn is_empty(&self) -> bool {
-        if self.operands.is_empty() {
+        if self.operands.is_empty() || self.result.is_some() {
             return true;
         }
 
@@ -202,16 +202,88 @@ impl Display for Operation {
     }
 }
 
-// mod test {
-//     use super::Calculation;
+#[cfg(test)]
+mod test_is_empty {
+    use super::*;
 
-//     #[test]
-//     fn is_empty_when_no_operands() {
-//         let calculation = Calculation {
-//             result: None,
-//             operands: Vec::new(),
-//         };
+    #[test]
+    fn is_empty_when_no_operands() {
+        let calculation = Calculation {
+            result: None,
+            operands: Vec::new(),
+        };
 
-//         assert_eq!(calculation.is_empty(), true);
-//     }
-// }
+        assert!(calculation.is_empty());
+    }
+
+    #[test]
+    fn is_empty_when_having_result() {
+        let calculation = Calculation {
+            result: Some(OperandValue::Decimal(dbig!(1))),
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Decimal(dbig!(1)),
+            }],
+        };
+
+        assert!(calculation.is_empty());
+    }
+
+    #[test]
+    fn is_empty_when_operand_value_is_zero() {
+        let calculation = Calculation {
+            result: None,
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Decimal(dbig!(0)),
+            }],
+        };
+
+        assert!(calculation.is_empty());
+    }
+
+    #[test]
+    fn is_not_empty_when_having_operands() {
+        let calculation = Calculation {
+            result: None,
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Decimal(dbig!(1)),
+            }],
+        };
+
+        assert!(!calculation.is_empty());
+    }
+
+    #[test]
+    fn is_not_empty_when_having_symbol() {
+        let calculation = Calculation {
+            result: None,
+            operands: vec![Operand {
+                operation: Some(Operation::Times),
+                value: OperandValue::Decimal(dbig!(0)),
+            }],
+        };
+
+        assert!(!calculation.is_empty());
+    }
+
+    #[test]
+    fn is_not_empty_when_having_multiple_operands() {
+        let calculation = Calculation {
+            result: None,
+            operands: vec![
+                Operand {
+                    operation: None,
+                    value: OperandValue::Decimal(dbig!(0)),
+                },
+                Operand {
+                    operation: None,
+                    value: OperandValue::Decimal(dbig!(0)),
+                },
+            ],
+        };
+
+        assert!(!calculation.is_empty());
+    }
+}
