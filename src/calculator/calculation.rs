@@ -34,10 +34,7 @@ impl Calculation {
                 .fold((dbig!(0), None), |(acc, operation), operand| {
                     if let Some(op) = operation {
                         let new_value = match op {
-                            Operation::Plus => {
-                                println!("{} + {}", acc, operand.value);
-                                acc.add(operand.value.clone()).with_precision(10)
-                            }
+                            Operation::Plus => acc.add(operand.value.clone()).with_precision(10),
                             _ => todo!(),
                         };
 
