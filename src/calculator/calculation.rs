@@ -26,6 +26,10 @@ pub struct Calculation {
 
 impl Calculation {
     pub fn calculate(&mut self) {
+        if self.operands.len() <= 1 {
+            return;
+        }
+
         self.past_operands = self.operands.clone();
 
         let (value, _): (FBig<HalfAway, 10>, Option<Operation>) =
@@ -139,6 +143,10 @@ impl Calculation {
         let current_operand = self.operands.last_mut();
         if let Some(&mut ref mut operand) = current_operand {
             operand.operation = Some(op)
+        }
+
+        if !self.past_operands.is_empty() {
+            self.past_operands = vec![];
         }
     }
 
@@ -477,6 +485,39 @@ mod append_operation {
             }
         );
     }
+
+    #[test]
+    fn clears_previous_operands() {
+        let mut calculation = Calculation {
+            past_operands: vec![
+                Operand {
+                    operation: Some(Operation::Times),
+                    value: dbig!(2),
+                },
+                Operand {
+                    operation: None,
+                    value: dbig!(2),
+                },
+            ],
+            operands: vec![Operand {
+                operation: None,
+                value: dbig!(5),
+            }],
+        };
+
+        calculation.append_operation(Operation::Plus);
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: Some(Operation::Plus),
+                    value: dbig!(5),
+                }],
+            }
+        )
+    }
 }
 
 #[cfg(test)]
@@ -491,7 +532,7 @@ mod test_is_empty {
     }
 
     #[test]
-    fn is_empty_when_having_past_operandsresult() {
+    fn is_empty_when_having_past_operands_and_result() {
         let calculation = Calculation {
             past_operands: vec![Operand {
                 operation: None,
