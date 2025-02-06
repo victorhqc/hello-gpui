@@ -80,6 +80,20 @@ impl Calculation {
         SharedString::new(str)
     }
 
+    pub fn past_operations_string(&self) -> SharedString {
+        let mut str = String::new();
+
+        for operand in &self.past_operands {
+            str.insert_str(str.len(), &operand.value.to_string());
+
+            if let Some(operation) = &operand.operation {
+                str.insert_str(str.len(), &operation.to_string());
+            }
+        }
+
+        SharedString::new(str)
+    }
+
     pub fn append_number(&mut self, num: usize) {
         let current_operand = self.operands.last_mut();
 

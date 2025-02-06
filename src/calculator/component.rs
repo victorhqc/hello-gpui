@@ -54,6 +54,15 @@ impl Calculator {
             .child(self.calculation.current_operation_string())
     }
 
+    fn render_past_operations(&self) -> impl IntoElement {
+        div()
+            .w_full()
+            .flex()
+            .flex_row()
+            .justify_end()
+            .child(self.calculation.past_operations_string())
+    }
+
     fn render_ac_label(&self) -> SharedString {
         if self.calculation.is_empty() {
             return "AC".into();
@@ -110,17 +119,11 @@ impl Render for Calculator {
                 div().w_full().mt_9(),
                 div()
                     .w_full()
-                    .flex()
-                    .flex_row()
-                    .justify_end()
                     .text_lg()
                     .text_color(rgb(0xcccccc))
-                    .children([div().child("")]),
+                    .child(self.render_past_operations()),
                 div()
                     .w_full()
-                    .flex()
-                    .flex_row()
-                    .justify_end()
                     .text_2xl()
                     .px(px(5.))
                     .child(self.render_result()),
