@@ -1,7 +1,11 @@
 use dashu::Decimal;
 use dashu_float::{round::mode::HalfAway, DBig, FBig};
 use gpui::SharedString;
-use std::{fmt::Display, ops::Add, str::FromStr};
+use std::{
+    fmt::Display,
+    ops::{Add, Sub},
+    str::FromStr,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
@@ -39,6 +43,7 @@ impl Calculation {
                     if let Some(op) = operation {
                         let new_value = match op {
                             Operation::Plus => acc.add(operand.value.clone()).with_precision(10),
+                            Operation::Minus => acc.sub(operand.value.clone()).with_precision(10),
                             _ => todo!(),
                         };
 
