@@ -3,16 +3,16 @@ use dashu_float::{round::mode::HalfAway, DBig, FBig};
 use gpui::SharedString;
 use std::{
     fmt::Display,
-    ops::{Add, Sub},
+    ops::{Add, Mul, Sub},
     str::FromStr,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Division,
-    Times,
-    Minus,
-    Plus,
+    Multiplication,
+    Subtraction,
+    Addition,
     Equals,
 }
 
@@ -42,8 +42,15 @@ impl Calculation {
                 .fold((dbig!(0), None), |(acc, operation), operand| {
                     if let Some(op) = operation {
                         let new_value = match op {
-                            Operation::Plus => acc.add(operand.value.clone()).with_precision(10),
-                            Operation::Minus => acc.sub(operand.value.clone()).with_precision(10),
+                            Operation::Addition => {
+                                acc.add(operand.value.clone()).with_precision(10)
+                            }
+                            Operation::Subtraction => {
+                                acc.sub(operand.value.clone()).with_precision(10)
+                            }
+                            Operation::Multiplication => {
+                                acc.mul(operand.value.clone()).with_precision(10)
+                            }
                             _ => todo!(),
                         };
 
@@ -208,9 +215,9 @@ impl Default for Calculation {
 impl Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Operation::Plus => f.write_str("+"),
-            Operation::Minus => f.write_str("-"),
-            Operation::Times => f.write_str("⨉"),
+            Operation::Addition => f.write_str("+"),
+            Operation::Subtraction => f.write_str("-"),
+            Operation::Multiplication => f.write_str("⨉"),
             Operation::Division => f.write_str("÷"),
             Operation::Equals => f.write_str("＝"),
         }
@@ -249,7 +256,7 @@ mod test_sum_calculation {
         let mut calculation = Calculation {
             past_operands: vec![],
             operands: vec![Operand {
-                operation: Some(Operation::Plus),
+                operation: Some(Operation::Addition),
                 value: dbig!(5),
             }],
         };
@@ -264,7 +271,7 @@ mod test_sum_calculation {
             past_operands: vec![],
             operands: vec![
                 Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(5),
                 },
                 Operand {
@@ -280,7 +287,7 @@ mod test_sum_calculation {
             Calculation {
                 past_operands: vec![
                     Operand {
-                        operation: Some(Operation::Plus),
+                        operation: Some(Operation::Addition),
                         value: dbig!(5),
                     },
                     Operand {
@@ -302,11 +309,11 @@ mod test_sum_calculation {
             past_operands: vec![],
             operands: vec![
                 Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(5),
                 },
                 Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(5),
                 },
                 Operand {
@@ -322,11 +329,11 @@ mod test_sum_calculation {
             Calculation {
                 past_operands: vec![
                     Operand {
-                        operation: Some(Operation::Plus),
+                        operation: Some(Operation::Addition),
                         value: dbig!(5),
                     },
                     Operand {
-                        operation: Some(Operation::Plus),
+                        operation: Some(Operation::Addition),
                         value: dbig!(5),
                     },
                     Operand {
@@ -348,7 +355,7 @@ mod test_sum_calculation {
             past_operands: vec![],
             operands: vec![
                 Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(-10),
                 },
                 Operand {
@@ -364,7 +371,7 @@ mod test_sum_calculation {
             Calculation {
                 past_operands: vec![
                     Operand {
-                        operation: Some(Operation::Plus),
+                        operation: Some(Operation::Addition),
                         value: dbig!(-10),
                     },
                     Operand {
@@ -413,14 +420,14 @@ mod append_operation {
     #[test]
     fn appends_when_empty() {
         let mut calculation = Calculation::default();
-        calculation.append_operation(Operation::Plus);
+        calculation.append_operation(Operation::Addition);
 
         assert_eq!(
             calculation,
             Calculation {
                 past_operands: vec![],
                 operands: vec![Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(0),
                 }],
             }
@@ -431,14 +438,14 @@ mod append_operation {
     fn appends_when_having_value() {
         let mut calculation = Calculation::default();
         calculation.append_number(5);
-        calculation.append_operation(Operation::Plus);
+        calculation.append_operation(Operation::Addition);
 
         assert_eq!(
             calculation,
             Calculation {
                 past_operands: vec![],
                 operands: vec![Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(5),
                 }],
             }
@@ -449,16 +456,16 @@ mod append_operation {
     fn overrides_operation_on_multiple_appends() {
         let mut calculation = Calculation::default();
         calculation.append_number(5);
-        calculation.append_operation(Operation::Plus);
-        calculation.append_operation(Operation::Minus);
-        calculation.append_operation(Operation::Times);
+        calculation.append_operation(Operation::Addition);
+        calculation.append_operation(Operation::Subtraction);
+        calculation.append_operation(Operation::Multiplication);
 
         assert_eq!(
             calculation,
             Calculation {
                 past_operands: vec![],
                 operands: vec![Operand {
-                    operation: Some(Operation::Times),
+                    operation: Some(Operation::Multiplication),
                     value: dbig!(5),
                 }],
             }
@@ -469,9 +476,9 @@ mod append_operation {
     fn appends_operation_on_multiple_operands() {
         let mut calculation = Calculation::default();
         calculation.append_number(5);
-        calculation.append_operation(Operation::Times);
+        calculation.append_operation(Operation::Multiplication);
         calculation.append_number(10);
-        calculation.append_operation(Operation::Minus);
+        calculation.append_operation(Operation::Subtraction);
 
         assert_eq!(
             calculation,
@@ -479,11 +486,11 @@ mod append_operation {
                 past_operands: vec![],
                 operands: vec![
                     Operand {
-                        operation: Some(Operation::Times),
+                        operation: Some(Operation::Multiplication),
                         value: dbig!(5),
                     },
                     Operand {
-                        operation: Some(Operation::Minus),
+                        operation: Some(Operation::Subtraction),
                         value: dbig!(10),
                     },
                 ],
@@ -496,7 +503,7 @@ mod append_operation {
         let mut calculation = Calculation {
             past_operands: vec![
                 Operand {
-                    operation: Some(Operation::Times),
+                    operation: Some(Operation::Multiplication),
                     value: dbig!(2),
                 },
                 Operand {
@@ -510,14 +517,14 @@ mod append_operation {
             }],
         };
 
-        calculation.append_operation(Operation::Plus);
+        calculation.append_operation(Operation::Addition);
 
         assert_eq!(
             calculation,
             Calculation {
                 past_operands: vec![],
                 operands: vec![Operand {
-                    operation: Some(Operation::Plus),
+                    operation: Some(Operation::Addition),
                     value: dbig!(5),
                 }],
             }
@@ -583,7 +590,7 @@ mod test_is_empty {
         let calculation = Calculation {
             past_operands: vec![],
             operands: vec![Operand {
-                operation: Some(Operation::Times),
+                operation: Some(Operation::Multiplication),
                 value: dbig!(0),
             }],
         };

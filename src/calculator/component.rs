@@ -345,9 +345,9 @@ impl From<OperationButton> for SharedString {
 impl From<OperationButton> for Operation {
     fn from(value: OperationButton) -> Self {
         match value {
-            OperationButton::Plus => Operation::Plus,
-            OperationButton::Minus => Operation::Minus,
-            OperationButton::Times => Operation::Times,
+            OperationButton::Plus => Operation::Addition,
+            OperationButton::Minus => Operation::Subtraction,
+            OperationButton::Times => Operation::Multiplication,
             OperationButton::Division => Operation::Division,
             OperationButton::Equals => Operation::Equals,
         }
