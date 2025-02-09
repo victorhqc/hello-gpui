@@ -14,6 +14,10 @@ impl Calculator {
         println!("target {:?}", value);
 
         if let Button::Number(num) = value {
+            if self.calculation.is_empty() {
+                self.calculation = Calculation::default();
+            }
+
             self.calculation.append_number(num.into());
 
             cx.notify();
