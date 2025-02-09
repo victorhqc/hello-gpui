@@ -40,7 +40,11 @@ impl Calculator {
 
     fn handle_ac_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
         if let Button::Ac = value {
-            self.calculation.remove_last();
+            if self.calculation.is_empty() {
+                self.calculation = Calculation::default();
+            } else {
+                self.calculation.remove_last();
+            }
             cx.notify();
         };
     }
