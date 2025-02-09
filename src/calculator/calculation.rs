@@ -48,20 +48,38 @@ impl Calculation {
                 (OperandValue::Number(acc), OperandValue::Number(val)) => {
                     if let Some(op) = operation {
                         let new_value: OperandValue = match op {
-                            Operation::Addition => {
-                                OperandValue::Number(acc.add(val).with_precision(10).value())
-                            }
-                            Operation::Subtraction => {
-                                OperandValue::Number(acc.sub(val).with_precision(10).value())
-                            }
-                            Operation::Multiplication => {
-                                OperandValue::Number(acc.mul(val).with_precision(10).value())
-                            }
+                            Operation::Addition => OperandValue::Number(
+                                acc.with_precision(10)
+                                    .value()
+                                    .add(val)
+                                    .with_precision(10)
+                                    .value(),
+                            ),
+                            Operation::Subtraction => OperandValue::Number(
+                                acc.with_precision(10)
+                                    .value()
+                                    .sub(val)
+                                    .with_precision(10)
+                                    .value(),
+                            ),
+                            Operation::Multiplication => OperandValue::Number(
+                                acc.with_precision(10)
+                                    .value()
+                                    .mul(val)
+                                    .with_precision(10)
+                                    .value(),
+                            ),
                             Operation::Division => {
                                 if val.eq(&dbig!(0)) {
                                     OperandValue::Undefined
                                 } else {
-                                    OperandValue::Number(acc.div(val).with_precision(10).value())
+                                    OperandValue::Number(
+                                        acc.with_precision(10)
+                                            .value()
+                                            .div(val)
+                                            .with_precision(10)
+                                            .value(),
+                                    )
                                 }
                             }
                             _ => todo!(),
