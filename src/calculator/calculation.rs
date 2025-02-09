@@ -1,9 +1,9 @@
 use dashu::Decimal;
-use dashu_float::{round::mode::HalfAway, DBig, FBig};
+use dashu_float::DBig;
 use gpui::SharedString;
 use std::{
     fmt::Display,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
     str::FromStr,
 };
 
@@ -17,9 +17,15 @@ pub enum Operation {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum OperandValue {
+    Number(Decimal),
+    Undefined,
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Operand {
     operation: Option<Operation>,
-    value: Decimal,
+    value: OperandValue,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,29 +42,39 @@ impl Calculation {
 
         self.past_operands = self.operands.clone();
 
-        let (value, _): (FBig<HalfAway, 10>, Option<Operation>) =
-            self.operands
-                .iter()
-                .fold((dbig!(0), None), |(acc, operation), operand| {
+        let (value, _): (OperandValue, Option<Operation>) = self.operands.iter().fold(
+            (OperandValue::default(), None),
+            |(acc, operation), operand| match (acc, operand.value.clone()) {
+                (OperandValue::Number(acc), OperandValue::Number(val)) => {
                     if let Some(op) = operation {
-                        let new_value = match op {
+                        let new_value: OperandValue = match op {
                             Operation::Addition => {
-                                acc.add(operand.value.clone()).with_precision(10)
+                                OperandValue::Number(acc.add(val).with_precision(10).value())
                             }
                             Operation::Subtraction => {
-                                acc.sub(operand.value.clone()).with_precision(10)
+                                OperandValue::Number(acc.sub(val).with_precision(10).value())
                             }
                             Operation::Multiplication => {
-                                acc.mul(operand.value.clone()).with_precision(10)
+                                OperandValue::Number(acc.mul(val).with_precision(10).value())
+                            }
+                            Operation::Division => {
+                                if val.eq(&dbig!(0)) {
+                                    OperandValue::Undefined
+                                } else {
+                                    OperandValue::Number(acc.div(val).with_precision(10).value())
+                                }
                             }
                             _ => todo!(),
                         };
 
-                        return (new_value.value(), operand.operation.clone());
+                        return (new_value, operand.operation.clone());
                     };
 
-                    (operand.value.clone(), operand.operation.clone())
-                });
+                    (OperandValue::Number(val), operand.operation.clone())
+                }
+                _ => (OperandValue::Undefined, None),
+            },
+        );
 
         self.operands = vec![Operand {
             operation: None,
@@ -76,7 +92,11 @@ impl Calculation {
         }
 
         if let Some(operand) = self.operands.first() {
-            return operand.operation.is_none() && operand.value.eq(&dbig!(0));
+            let no_operation = operand.operation.is_none();
+            let equals_zero = operand.value.eq(&OperandValue::Number(dbig!(0)));
+            let is_undefined = operand.value.eq(&OperandValue::Undefined);
+
+            return (no_operation && equals_zero) || is_undefined;
         }
 
         false
@@ -114,38 +134,45 @@ impl Calculation {
         let current_operand = self.operands.last_mut();
 
         if let Some(&mut ref mut operand) = current_operand {
-            if operand.operation.is_some() {
-                let new_val = DBig::from(num);
+            match operand.value.clone() {
+                OperandValue::Number(val) => {
+                    if operand.operation.is_some() {
+                        let new_val = DBig::from(num);
 
-                self.operands.push(Operand {
-                    value: new_val,
-                    operation: None,
-                });
+                        self.operands.push(Operand {
+                            value: OperandValue::Number(new_val),
+                            operation: None,
+                        });
 
-                return;
+                        return;
+                    }
+
+                    let (trunc, fract) = val.clone().split_at_point();
+
+                    let zero = dbig!(0);
+                    let (trunc, fract) = if fract.gt(&zero) && trunc.ne(&zero) {
+                        let stringified = fract.to_string();
+
+                        let appended = format!("{}{}", stringified, num);
+
+                        (trunc.to_string(), appended)
+                    } else {
+                        let stringified = trunc.to_string();
+
+                        let appended = format!("{}{}", stringified, num);
+
+                        (appended, fract.to_string())
+                    };
+
+                    operand.value = OperandValue::Number(
+                        DBig::from_str(&format!("{}.{}", trunc, fract)).unwrap(),
+                    );
+                }
+                OperandValue::Undefined => todo!(),
             }
-
-            let (trunc, fract) = operand.value.clone().split_at_point();
-
-            let zero = dbig!(0);
-            let (trunc, fract) = if fract.gt(&zero) && trunc.ne(&zero) {
-                let stringified = fract.to_string();
-
-                let appended = format!("{}{}", stringified, num);
-
-                (trunc.to_string(), appended)
-            } else {
-                let stringified = trunc.to_string();
-
-                let appended = format!("{}{}", stringified, num);
-
-                (appended, fract.to_string())
-            };
-
-            operand.value = DBig::from_str(&format!("{}.{}", trunc, fract)).unwrap();
         } else {
             self.operands.push(Operand {
-                value: DBig::from(num),
+                value: OperandValue::Number(DBig::from(num)),
                 operation: None,
             })
         }
@@ -175,7 +202,7 @@ impl Calculation {
 
             let val = operand.value.clone();
 
-            if val.eq(&dbig!(0)) {
+            if val.eq(&OperandValue::Number(dbig!(0))) {
                 if operands_len > 1 {
                     self.operands.pop();
                 }
@@ -198,7 +225,7 @@ impl Calculation {
             };
 
             let new_value = DBig::from_str(&new_value).unwrap();
-            operand.value = new_value;
+            operand.value = OperandValue::Number(new_value);
         };
     }
 }
@@ -224,11 +251,17 @@ impl Display for Operation {
     }
 }
 
-impl Default for Operand {
+impl Default for OperandValue {
     fn default() -> Self {
-        Operand {
-            operation: None,
-            value: dbig!(0),
+        OperandValue::Number(dbig!(0))
+    }
+}
+
+impl Display for OperandValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OperandValue::Number(v) => f.write_fmt(format_args!("{}", v)),
+            OperandValue::Undefined => f.write_str("Undefined"),
         }
     }
 }
@@ -243,7 +276,7 @@ mod test_sum_calculation {
             past_operands: vec![],
             operands: vec![Operand {
                 operation: None,
-                value: dbig!(5),
+                value: OperandValue::Number(dbig!(5)),
             }],
         };
         calculation.calculate();
@@ -257,7 +290,7 @@ mod test_sum_calculation {
             past_operands: vec![],
             operands: vec![Operand {
                 operation: Some(Operation::Addition),
-                value: dbig!(5),
+                value: OperandValue::Number(dbig!(5)),
             }],
         };
         calculation.calculate();
@@ -272,11 +305,11 @@ mod test_sum_calculation {
             operands: vec![
                 Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 },
                 Operand {
                     operation: None,
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 },
             ],
         };
@@ -288,16 +321,16 @@ mod test_sum_calculation {
                 past_operands: vec![
                     Operand {
                         operation: Some(Operation::Addition),
-                        value: dbig!(5),
+                        value: OperandValue::Number(dbig!(5)),
                     },
                     Operand {
                         operation: None,
-                        value: dbig!(5),
+                        value: OperandValue::Number(dbig!(5)),
                     }
                 ],
                 operands: vec![Operand {
                     operation: None,
-                    value: dbig!(10)
+                    value: OperandValue::Number(dbig!(10)),
                 }]
             }
         );
@@ -310,15 +343,15 @@ mod test_sum_calculation {
             operands: vec![
                 Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 },
                 Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 },
                 Operand {
                     operation: None,
-                    value: dbig!(5.5),
+                    value: OperandValue::Number(dbig!(5.5)),
                 },
             ],
         };
@@ -330,20 +363,20 @@ mod test_sum_calculation {
                 past_operands: vec![
                     Operand {
                         operation: Some(Operation::Addition),
-                        value: dbig!(5),
+                        value: OperandValue::Number(dbig!(5)),
                     },
                     Operand {
                         operation: Some(Operation::Addition),
-                        value: dbig!(5),
+                        value: OperandValue::Number(dbig!(5)),
                     },
                     Operand {
                         operation: None,
-                        value: dbig!(5.5),
+                        value: OperandValue::Number(dbig!(5.5)),
                     },
                 ],
                 operands: vec![Operand {
                     operation: None,
-                    value: dbig!(15.5)
+                    value: OperandValue::Number(dbig!(15.5)),
                 }]
             }
         );
@@ -356,11 +389,11 @@ mod test_sum_calculation {
             operands: vec![
                 Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(-10),
+                    value: OperandValue::Number(dbig!(-10)),
                 },
                 Operand {
                     operation: None,
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 },
             ],
         };
@@ -372,16 +405,16 @@ mod test_sum_calculation {
                 past_operands: vec![
                     Operand {
                         operation: Some(Operation::Addition),
-                        value: dbig!(-10),
+                        value: OperandValue::Number(dbig!(-10)),
                     },
                     Operand {
                         operation: None,
-                        value: dbig!(5),
+                        value: OperandValue::Number(dbig!(5)),
                     }
                 ],
                 operands: vec![Operand {
                     operation: None,
-                    value: dbig!(-5)
+                    value: OperandValue::Number(dbig!(-5)),
                 }]
             }
         );
@@ -428,7 +461,7 @@ mod append_operation {
                 past_operands: vec![],
                 operands: vec![Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(0),
+                    value: OperandValue::default(),
                 }],
             }
         );
@@ -446,7 +479,7 @@ mod append_operation {
                 past_operands: vec![],
                 operands: vec![Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 }],
             }
         );
@@ -466,7 +499,7 @@ mod append_operation {
                 past_operands: vec![],
                 operands: vec![Operand {
                     operation: Some(Operation::Multiplication),
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 }],
             }
         );
@@ -487,11 +520,11 @@ mod append_operation {
                 operands: vec![
                     Operand {
                         operation: Some(Operation::Multiplication),
-                        value: dbig!(5),
+                        value: OperandValue::Number(dbig!(5)),
                     },
                     Operand {
                         operation: Some(Operation::Subtraction),
-                        value: dbig!(10),
+                        value: OperandValue::Number(dbig!(10)),
                     },
                 ],
             }
@@ -504,16 +537,16 @@ mod append_operation {
             past_operands: vec![
                 Operand {
                     operation: Some(Operation::Multiplication),
-                    value: dbig!(2),
+                    value: OperandValue::Number(dbig!(2)),
                 },
                 Operand {
                     operation: None,
-                    value: dbig!(2),
+                    value: OperandValue::Number(dbig!(2)),
                 },
             ],
             operands: vec![Operand {
                 operation: None,
-                value: dbig!(5),
+                value: OperandValue::Number(dbig!(5)),
             }],
         };
 
@@ -525,7 +558,7 @@ mod append_operation {
                 past_operands: vec![],
                 operands: vec![Operand {
                     operation: Some(Operation::Addition),
-                    value: dbig!(5),
+                    value: OperandValue::Number(dbig!(5)),
                 }],
             }
         )
@@ -534,6 +567,8 @@ mod append_operation {
 
 #[cfg(test)]
 mod test_is_empty {
+    use dashu::dbig;
+
     use super::*;
 
     #[test]
@@ -548,11 +583,11 @@ mod test_is_empty {
         let calculation = Calculation {
             past_operands: vec![Operand {
                 operation: None,
-                value: dbig!(1),
+                value: OperandValue::Number(dbig!(1)),
             }],
             operands: vec![Operand {
                 operation: None,
-                value: dbig!(1),
+                value: OperandValue::Number(dbig!(1)),
             }],
         };
 
@@ -565,7 +600,7 @@ mod test_is_empty {
             past_operands: vec![],
             operands: vec![Operand {
                 operation: None,
-                value: dbig!(0),
+                value: OperandValue::default(),
             }],
         };
 
@@ -578,7 +613,7 @@ mod test_is_empty {
             past_operands: vec![],
             operands: vec![Operand {
                 operation: None,
-                value: dbig!(1),
+                value: OperandValue::Number(dbig!(1)),
             }],
         };
 
@@ -591,7 +626,7 @@ mod test_is_empty {
             past_operands: vec![],
             operands: vec![Operand {
                 operation: Some(Operation::Multiplication),
-                value: dbig!(0),
+                value: OperandValue::default(),
             }],
         };
 
