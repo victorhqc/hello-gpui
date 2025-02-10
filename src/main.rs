@@ -26,6 +26,8 @@ fn main() {
             },
         );
 
+        calculator::component::init(cx);
+
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             window_min_size: Some(size(px(198.), px(350.))),

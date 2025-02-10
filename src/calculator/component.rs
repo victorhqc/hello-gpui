@@ -2,7 +2,10 @@ use std::fmt::Display;
 
 use super::calculation::{Calculation, Operation};
 use crate::round_button::RoundButton;
-use gpui::{actions, div, prelude::*, px, rgb, rgba, ClickEvent, Context, SharedString, Window};
+use gpui::{
+    actions, div, prelude::*, px, rgb, rgba, Action, App, ClickEvent, Context, KeyBinding,
+    SharedString, Window,
+};
 
 #[derive(Default, Debug)]
 pub struct Calculator {
@@ -14,13 +17,7 @@ impl Calculator {
         println!("target {:?}", value);
 
         if let Button::Number(num) = value {
-            if self.calculation.is_empty() {
-                self.calculation = Calculation::default();
-            }
-
-            self.calculation.append_number(num.into());
-
-            cx.notify();
+            self.append_number(num.into(), cx);
         };
     }
 
@@ -44,13 +41,27 @@ impl Calculator {
 
     fn handle_ac_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
         if let Button::Ac = value {
-            if self.calculation.is_empty() {
-                self.calculation = Calculation::default();
-            } else {
-                self.calculation.remove_last();
-            }
-            cx.notify();
+            self.remove_or_clear(cx);
         };
+    }
+
+    fn append_number(&mut self, num: usize, cx: &mut Context<Self>) {
+        if self.calculation.is_empty() {
+            self.calculation = Calculation::default();
+        }
+
+        self.calculation.append_number(num);
+
+        cx.notify();
+    }
+
+    fn remove_or_clear(&mut self, cx: &mut Context<Self>) {
+        if self.calculation.is_empty() {
+            self.calculation = Calculation::default();
+        } else {
+            self.calculation.remove_last();
+        }
+        cx.notify();
     }
 
     fn render_result(&self) -> impl IntoElement {
@@ -77,6 +88,18 @@ impl Calculator {
         }
 
         "<-".into()
+    }
+}
+
+impl Calculator {
+    fn backspace(&mut self, _: &Backspace, _: &mut Window, cx: &mut Context<Self>) {
+        println!("Backspace action");
+        self.remove_or_clear(cx);
+    }
+
+    fn one(&mut self, _: &One, _: &mut Window, cx: &mut Context<Self>) {
+        println!("One action");
+        self.append_number(1, cx);
     }
 }
 
@@ -117,6 +140,8 @@ impl Render for Calculator {
             RoundButton::new("equals_btn", OperationButton::Equals.into(), Some(orange));
 
         div()
+            .on_action(cx.listener(Self::backspace))
+            .on_action(cx.listener(Self::one))
             .items_center()
             .shadow_lg()
             .bg(rgba(0x45454580))
@@ -279,6 +304,13 @@ impl Render for Calculator {
                     ]),
             ])
     }
+}
+
+pub fn init(cx: &mut App) {
+    cx.bind_keys([
+        KeyBinding::new("backspace", Backspace, None),
+        KeyBinding::new("1", One, None),
+    ]);
 }
 
 #[derive(Debug)]

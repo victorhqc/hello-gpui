@@ -1,8 +1,9 @@
 use gpui::{
-    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, Rgba, SharedString, Window,
+    div, prelude::*, px, rgb, rgba, Action, App, ClickEvent, ElementId, Rgba, SharedString, Window,
 };
 
 type ClickFn = dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static;
+// type ActionFn<A: Action> = dyn Fn(&A, &mut Window, &mut App) + 'static;
 
 #[derive(IntoElement)]
 pub struct RoundButton {
@@ -11,6 +12,7 @@ pub struct RoundButton {
     active_bg: Rgba,
     is_disabled: bool,
     on_click: Option<Box<ClickFn>>,
+    // on_action: Option<Box<ActionFn<A>>>,
     label: SharedString,
 }
 
@@ -27,6 +29,7 @@ impl RoundButton {
             active_bg,
             is_disabled: false,
             on_click: None,
+            // on_action: None,
         }
     }
 
@@ -37,6 +40,12 @@ impl RoundButton {
         self.on_click = Some(Box::new(handler));
         self
     }
+
+    // pub fn on_action(mut self, handler: impl Fn(&A, &mut Window, &mut App) + 'static) -> Self {
+    //     self.on_action = Some(Box::new(handler));
+
+    //     self
+    // }
 
     pub fn label(mut self, label: SharedString) -> Self {
         self.label = label;
@@ -56,6 +65,9 @@ impl RenderOnce for RoundButton {
             .when_some(self.on_click, |this, on_click| {
                 this.on_click(move |evt, win, app| (on_click)(evt, win, app))
             })
+            // .when_some(self.on_action, |this, on_action| {
+            //     this.on_action(move |act, win, app| (on_action)(act, win, app))
+            // })
             .when(!self.is_disabled, |this| {
                 this.active(|this| this.bg(self.active_bg))
             })
