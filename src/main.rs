@@ -6,6 +6,12 @@ use gpui::{
 #[macro_use]
 extern crate dashu_macros;
 
+#[macro_use]
+extern crate serde_derive;
+
+#[macro_use]
+extern crate schemars;
+
 mod calculator;
 mod round_button;
 
@@ -26,6 +32,7 @@ fn main() {
             },
         );
 
+        cx.activate(true);
         calculator::component::init(cx);
 
         let window_options = WindowOptions {
@@ -46,7 +53,16 @@ fn main() {
             cx.new(|_| calculator::component::Calculator::default())
         })
         .unwrap();
-        cx.activate(true);
+
+        // let view = window.entity(cx).unwrap();
+        // cx.observe_keystrokes(move |ev, _, cx| {
+        //     view.update(cx, |view, cx| {
+        //         println!("Keystroke {}", ev.keystroke);
+        //         // view.recent_keystrokes.push(ev.keystroke.clone());
+        //         cx.notify();
+        //     })
+        // })
+        // .detach();
     });
 }
 

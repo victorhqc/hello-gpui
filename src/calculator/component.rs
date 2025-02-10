@@ -3,8 +3,8 @@ use std::fmt::Display;
 use super::calculation::{Calculation, Operation};
 use crate::round_button::RoundButton;
 use gpui::{
-    actions, div, prelude::*, px, rgb, rgba, Action, App, ClickEvent, Context, KeyBinding,
-    SharedString, Window,
+    actions, div, impl_actions, prelude::*, px, rgb, rgba, Action, App, ClickEvent, Context,
+    KeyBinding, SharedString, Window,
 };
 
 #[derive(Default, Debug)]
@@ -14,8 +14,6 @@ pub struct Calculator {
 
 impl Calculator {
     fn handle_number_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
-        println!("target {:?}", value);
-
         if let Button::Number(num) = value {
             self.append_number(num.into(), cx);
         };
@@ -93,13 +91,40 @@ impl Calculator {
 
 impl Calculator {
     fn backspace(&mut self, _: &Backspace, _: &mut Window, cx: &mut Context<Self>) {
-        println!("Backspace action");
         self.remove_or_clear(cx);
     }
 
-    fn one(&mut self, _: &One, _: &mut Window, cx: &mut Context<Self>) {
-        println!("One action");
-        self.append_number(1, cx);
+    fn enter(&mut self, _: &Calculate, _: &mut Window, cx: &mut Context<Self>) {
+        self.calculation.calculate();
+        cx.notify();
+    }
+
+    fn addition(&mut self, _: &Addition, _: &mut Window, cx: &mut Context<Self>) {
+        self.calculation
+            .append_operation(OperationButton::Plus.into());
+        cx.notify();
+    }
+
+    fn subtraction(&mut self, _: &Subtraction, _: &mut Window, cx: &mut Context<Self>) {
+        self.calculation
+            .append_operation(OperationButton::Minus.into());
+        cx.notify();
+    }
+
+    fn multiplication(&mut self, _: &Multiplication, _: &mut Window, cx: &mut Context<Self>) {
+        self.calculation
+            .append_operation(OperationButton::Times.into());
+        cx.notify();
+    }
+
+    fn division(&mut self, _: &Division, _: &mut Window, cx: &mut Context<Self>) {
+        self.calculation
+            .append_operation(OperationButton::Division.into());
+        cx.notify();
+    }
+
+    fn press_number(&mut self, a: &NumberAction, _: &mut Window, cx: &mut Context<Self>) {
+        self.append_number(a.val, cx);
     }
 }
 
@@ -140,8 +165,16 @@ impl Render for Calculator {
             RoundButton::new("equals_btn", OperationButton::Equals.into(), Some(orange));
 
         div()
+            .id("calculator")
+            .focusable()
+            .key_context(CONTEXT)
             .on_action(cx.listener(Self::backspace))
-            .on_action(cx.listener(Self::one))
+            .on_action(cx.listener(Self::enter))
+            .on_action(cx.listener(Self::addition))
+            .on_action(cx.listener(Self::subtraction))
+            .on_action(cx.listener(Self::multiplication))
+            .on_action(cx.listener(Self::division))
+            .on_action(cx.listener(Self::press_number))
             .items_center()
             .shadow_lg()
             .bg(rgba(0x45454580))
@@ -306,10 +339,26 @@ impl Render for Calculator {
     }
 }
 
+const CONTEXT: &str = "Calculator";
+
 pub fn init(cx: &mut App) {
     cx.bind_keys([
-        KeyBinding::new("backspace", Backspace, None),
-        KeyBinding::new("1", One, None),
+        KeyBinding::new("backspace", Backspace, Some(CONTEXT)),
+        KeyBinding::new("enter", Calculate, Some(CONTEXT)),
+        KeyBinding::new("+", Addition, Some(CONTEXT)),
+        KeyBinding::new("-", Subtraction, Some(CONTEXT)),
+        KeyBinding::new("*", Multiplication, Some(CONTEXT)),
+        KeyBinding::new("/", Division, Some(CONTEXT)),
+        KeyBinding::new("0", NumberAction { val: 0 }, Some(CONTEXT)),
+        KeyBinding::new("1", NumberAction { val: 1 }, Some(CONTEXT)),
+        KeyBinding::new("2", NumberAction { val: 2 }, Some(CONTEXT)),
+        KeyBinding::new("3", NumberAction { val: 3 }, Some(CONTEXT)),
+        KeyBinding::new("4", NumberAction { val: 4 }, Some(CONTEXT)),
+        KeyBinding::new("5", NumberAction { val: 5 }, Some(CONTEXT)),
+        KeyBinding::new("6", NumberAction { val: 6 }, Some(CONTEXT)),
+        KeyBinding::new("7", NumberAction { val: 7 }, Some(CONTEXT)),
+        KeyBinding::new("8", NumberAction { val: 8 }, Some(CONTEXT)),
+        KeyBinding::new("9", NumberAction { val: 9 }, Some(CONTEXT)),
     ]);
 }
 
@@ -394,10 +443,23 @@ impl From<OperationButton> for Operation {
     }
 }
 
+#[derive(Clone, PartialEq, Deserialize, JsonSchema)]
+struct NumberAction {
+    val: usize,
+}
+
+impl_actions!(calculator1, [NumberAction]);
+
 actions!(
     calculator,
     [
-        Backspace, PlusMinus, Percent, Zero, One, Two, Three, Four, Five, Six, Seven, Eight, Nine,
-        Plus, Minus, Times, Division, Equals,
+        Backspace,
+        PlusMinus,
+        Percent,
+        Addition,
+        Subtraction,
+        Multiplication,
+        Division,
+        Calculate
     ]
 );

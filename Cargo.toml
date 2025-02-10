@@ -9,3 +9,6 @@ dashu-base = "0.4.1"
 dashu-float = "0.4.3"
 dashu-macros = "0.4.1"
 gpui = { git = "https://github.com/zed-industries/zed" }
+serde = { version = "1.0.217", features = ["serde_derive"] }
+serde_derive = "1.0.217"
+schemars = "0.8.21"
