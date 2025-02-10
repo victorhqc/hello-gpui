@@ -49,24 +49,24 @@ impl Calculation {
                     if let Some(op) = operation {
                         let new_value: OperandValue = match op {
                             Operation::Addition => OperandValue::Number(
-                                acc.with_precision(10)
+                                acc.with_precision(30)
                                     .value()
                                     .add(val)
-                                    .with_precision(10)
+                                    .with_precision(30)
                                     .value(),
                             ),
                             Operation::Subtraction => OperandValue::Number(
-                                acc.with_precision(10)
+                                acc.with_precision(30)
                                     .value()
                                     .sub(val)
-                                    .with_precision(10)
+                                    .with_precision(30)
                                     .value(),
                             ),
                             Operation::Multiplication => OperandValue::Number(
-                                acc.with_precision(10)
+                                acc.with_precision(30)
                                     .value()
                                     .mul(val)
-                                    .with_precision(10)
+                                    .with_precision(30)
                                     .value(),
                             ),
                             Operation::Division => {
@@ -74,10 +74,10 @@ impl Calculation {
                                     OperandValue::Undefined
                                 } else {
                                     OperandValue::Number(
-                                        acc.with_precision(10)
+                                        acc.with_precision(30)
                                             .value()
                                             .div(val)
-                                            .with_precision(10)
+                                            .with_precision(30)
                                             .value(),
                                     )
                                 }
