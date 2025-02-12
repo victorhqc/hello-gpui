@@ -1,21 +1,37 @@
 use std::fmt::Display;
 
-use super::calculation::{Calculation, Operation};
+use super::{
+    button::{Button as CalculatorButton, Event as ButtonEvent},
+    calculation::{Calculation, Operation},
+};
 use crate::round_button::RoundButton;
 use gpui::{
-    actions, div, impl_actions, prelude::*, px, rgb, rgba, App, ClickEvent, Context, KeyBinding,
-    SharedString, Window,
+    actions, div, impl_actions, prelude::*, px, rgb, rgba, App, ClickEvent, Context, Entity,
+    KeyBinding, SharedString, Window,
 };
 
 #[derive(Debug)]
 pub struct Calculator {
     calculation: Calculation,
+    dino_btn: Entity<CalculatorButton>,
 }
 
 impl Calculator {
-    pub fn new(_window: &mut Window, _: &mut Context<Self>) -> Self {
+    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let orange = rgb(0xff9600);
+        let dark_gray = rgb(0x515251);
+
+        let dino_btn =
+            cx.new(|_| CalculatorButton::new("🦖".into(), dark_gray, ButtonEvent::Number(1)));
+
+        cx.subscribe(&dino_btn, |this, _, event, cx| {
+            Self::on_event(this, event, cx);
+        })
+        .detach();
+
         Calculator {
             calculation: Calculation::default(),
+            dino_btn,
         }
     }
 }
@@ -98,6 +114,14 @@ impl Calculator {
 }
 
 impl Calculator {
+    fn on_event(&mut self, evt: &ButtonEvent, cx: &mut Context<Self>) {
+        match evt {
+            ButtonEvent::Number(val) => {
+                self.append_number(*val, cx);
+            }
+        }
+    }
+
     fn keyboard(&mut self, a: &CalculatorAction, _: &mut Window, cx: &mut Context<Self>) {
         match a {
             CalculatorAction::Backspace => {
@@ -128,6 +152,7 @@ impl Calculator {
                 cx.notify();
             }
             &CalculatorAction::Numeric(val) => {
+                self.dino_btn.update(cx, |btn, cx| btn.set_clicked(cx));
                 self.append_number(val, cx);
             }
             _ => {}
@@ -288,6 +313,7 @@ impl Render for Calculator {
                     .items_center()
                     .gap(px(5.))
                     .children(btns),
+                div().child(self.dino_btn.clone()),
             ])
     }
 }
