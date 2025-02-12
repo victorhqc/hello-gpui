@@ -49,8 +49,8 @@ fn main() {
             ..Default::default()
         };
 
-        cx.open_window(window_options, |_, cx| {
-            cx.new(|_| calculator::component::Calculator::default())
+        cx.open_window(window_options, |window, cx| {
+            cx.new(|c| calculator::component::Calculator::new(window, c))
         })
         .unwrap();
 

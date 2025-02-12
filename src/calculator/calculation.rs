@@ -7,7 +7,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Deserialize, JsonSchema)]
 pub enum Operation {
     Division,
     Multiplication,
