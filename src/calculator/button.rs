@@ -4,6 +4,8 @@ use gpui::{
 };
 use std::time::Duration;
 
+use super::calculation::Operation;
+
 const DELAY: Duration = Duration::from_millis(50);
 
 pub struct Button {
@@ -43,6 +45,10 @@ impl Button {
     fn handle_click(&mut self, _event: &ClickEvent, cx: &mut Context<Self>) {
         cx.emit(self.event_to_emit.clone());
     }
+
+    pub fn label(&mut self, label: SharedString) {
+        self.label = label;
+    }
 }
 
 impl Render for Button {
@@ -64,6 +70,11 @@ impl Render for Button {
 #[derive(Debug, Clone)]
 pub enum Event {
     Number(usize),
+    Clear,
+    PlusMinus,
+    Percent,
+    Operation(Operation),
+    Noop,
 }
 
 impl EventEmitter<Event> for Button {}

@@ -4,69 +4,184 @@ use super::{
     button::{Button as CalculatorButton, Event as ButtonEvent},
     calculation::{Calculation, Operation},
 };
-use crate::round_button::RoundButton;
 use gpui::{
-    actions, div, impl_actions, prelude::*, px, rgb, rgba, App, ClickEvent, Context, Entity,
-    KeyBinding, SharedString, Window,
+    div, impl_actions, prelude::*, px, rgb, rgba, App, Context, Entity, KeyBinding, SharedString,
+    Window,
 };
 
 #[derive(Debug)]
 pub struct Calculator {
     calculation: Calculation,
-    dino_btn: Entity<CalculatorButton>,
+    ac_btn: Entity<CalculatorButton>,
+    plus_minus_btn: Entity<CalculatorButton>,
+    percent_btn: Entity<CalculatorButton>,
+    division_btn: Entity<CalculatorButton>,
+    multiplication_btn: Entity<CalculatorButton>,
+    subtraction_btn: Entity<CalculatorButton>,
+    addition_btn: Entity<CalculatorButton>,
+    equals_btn: Entity<CalculatorButton>,
+    zero_btn: Entity<CalculatorButton>,
+    one_btn: Entity<CalculatorButton>,
+    two_btn: Entity<CalculatorButton>,
+    three_btn: Entity<CalculatorButton>,
+    four_btn: Entity<CalculatorButton>,
+    five_btn: Entity<CalculatorButton>,
+    six_btn: Entity<CalculatorButton>,
+    seven_btn: Entity<CalculatorButton>,
+    eight_btn: Entity<CalculatorButton>,
+    nine_btn: Entity<CalculatorButton>,
+    calc_btn: Entity<CalculatorButton>,
+    comma_btn: Entity<CalculatorButton>,
 }
 
 impl Calculator {
     pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let orange = rgb(0xff9600);
+        let light_gray = rgb(0x707070);
         let dark_gray = rgb(0x515251);
+        let orange = rgb(0xff9600);
 
-        let dino_btn =
-            cx.new(|_| CalculatorButton::new("🦖".into(), dark_gray, ButtonEvent::Number(1)));
+        let ac_btn = cx.new(|_| CalculatorButton::new("AC".into(), light_gray, ButtonEvent::Clear));
+        Self::subscribe_btn(&ac_btn, cx);
 
-        cx.subscribe(&dino_btn, |this, _, event, cx| {
-            Self::on_event(this, event, cx);
-        })
-        .detach();
+        let plus_minus_btn =
+            cx.new(|_| CalculatorButton::new("±".into(), light_gray, ButtonEvent::PlusMinus));
+        Self::subscribe_btn(&plus_minus_btn, cx);
+
+        let percent_btn =
+            cx.new(|_| CalculatorButton::new("%".into(), light_gray, ButtonEvent::Percent));
+        Self::subscribe_btn(&percent_btn, cx);
+
+        let division_btn = cx.new(|_| {
+            CalculatorButton::new(
+                OperationButton::Division.into(),
+                orange,
+                ButtonEvent::Operation(Operation::Division),
+            )
+        });
+        Self::subscribe_btn(&division_btn, cx);
+
+        let seven_btn =
+            cx.new(|_| CalculatorButton::new("7".into(), dark_gray, ButtonEvent::Number(7)));
+        Self::subscribe_btn(&seven_btn, cx);
+
+        let eight_btn =
+            cx.new(|_| CalculatorButton::new("8".into(), dark_gray, ButtonEvent::Number(8)));
+        Self::subscribe_btn(&eight_btn, cx);
+
+        let nine_btn =
+            cx.new(|_| CalculatorButton::new("9".into(), dark_gray, ButtonEvent::Number(9)));
+        Self::subscribe_btn(&nine_btn, cx);
+
+        let multiplication_btn = cx.new(|_| {
+            CalculatorButton::new(
+                OperationButton::Times.into(),
+                orange,
+                ButtonEvent::Operation(Operation::Multiplication),
+            )
+        });
+        Self::subscribe_btn(&multiplication_btn, cx);
+
+        let four_btn =
+            cx.new(|_| CalculatorButton::new("4".into(), dark_gray, ButtonEvent::Number(4)));
+        Self::subscribe_btn(&four_btn, cx);
+
+        let five_btn =
+            cx.new(|_| CalculatorButton::new("5".into(), dark_gray, ButtonEvent::Number(5)));
+        Self::subscribe_btn(&five_btn, cx);
+
+        let six_btn =
+            cx.new(|_| CalculatorButton::new("6".into(), dark_gray, ButtonEvent::Number(6)));
+        Self::subscribe_btn(&six_btn, cx);
+
+        let subtraction_btn = cx.new(|_| {
+            CalculatorButton::new(
+                "－".into(),
+                orange,
+                ButtonEvent::Operation(Operation::Subtraction),
+            )
+        });
+        Self::subscribe_btn(&subtraction_btn, cx);
+
+        let one_btn =
+            cx.new(|_| CalculatorButton::new("1".into(), dark_gray, ButtonEvent::Number(1)));
+        Self::subscribe_btn(&one_btn, cx);
+
+        let two_btn =
+            cx.new(|_| CalculatorButton::new("2".into(), dark_gray, ButtonEvent::Number(2)));
+        Self::subscribe_btn(&two_btn, cx);
+
+        let three_btn =
+            cx.new(|_| CalculatorButton::new("3".into(), dark_gray, ButtonEvent::Number(3)));
+        Self::subscribe_btn(&three_btn, cx);
+
+        let addition_btn = cx.new(|_| {
+            CalculatorButton::new(
+                "＋".into(),
+                orange,
+                ButtonEvent::Operation(Operation::Addition),
+            )
+        });
+        Self::subscribe_btn(&addition_btn, cx);
+
+        let calc_btn =
+            cx.new(|_| CalculatorButton::new("calc".into(), dark_gray, ButtonEvent::Noop));
+        Self::subscribe_btn(&calc_btn, cx);
+
+        let zero_btn =
+            cx.new(|_| CalculatorButton::new("0".into(), dark_gray, ButtonEvent::Number(0)));
+        Self::subscribe_btn(&zero_btn, cx);
+
+        let comma_btn = cx.new(|_| CalculatorButton::new(",".into(), dark_gray, ButtonEvent::Noop));
+        Self::subscribe_btn(&comma_btn, cx);
+
+        let equals_btn = cx.new(|_| {
+            CalculatorButton::new(
+                OperationButton::Equals.into(),
+                orange,
+                ButtonEvent::Operation(Operation::Equals),
+            )
+        });
+        Self::subscribe_btn(&equals_btn, cx);
 
         Calculator {
             calculation: Calculation::default(),
-            dino_btn,
+            // row 1
+            ac_btn,
+            plus_minus_btn,
+            percent_btn,
+            division_btn,
+            // row 2
+            seven_btn,
+            eight_btn,
+            nine_btn,
+            multiplication_btn,
+            // row 3
+            four_btn,
+            five_btn,
+            six_btn,
+            subtraction_btn,
+            // row 4
+            one_btn,
+            two_btn,
+            three_btn,
+            addition_btn,
+            // row 5
+            calc_btn,
+            zero_btn,
+            comma_btn,
+            equals_btn,
         }
+    }
+
+    fn subscribe_btn(entity: &Entity<CalculatorButton>, cx: &mut Context<Self>) {
+        cx.subscribe(entity, |this, _, event, cx| {
+            Self::on_event(this, event, cx);
+        })
+        .detach();
     }
 }
 
 impl Calculator {
-    fn handle_number_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
-        if let Button::Number(num) = value {
-            self.append_number(num.into(), cx);
-        };
-    }
-
-    fn handle_operation_press(
-        &mut self,
-        value: Button,
-        _event: &ClickEvent,
-        cx: &mut Context<Self>,
-    ) {
-        if let Button::Operation(op) = value {
-            match op {
-                OperationButton::Equals => {
-                    self.calculation.calculate();
-                }
-                _ => self.calculation.append_operation(op.into()),
-            };
-
-            cx.notify();
-        }
-    }
-
-    fn handle_ac_press(&mut self, value: Button, _event: &ClickEvent, cx: &mut Context<Self>) {
-        if let Button::Ac = value {
-            self.remove_or_clear(cx);
-        };
-    }
-
     fn append_number(&mut self, num: usize, cx: &mut Context<Self>) {
         if self.calculation.is_empty() {
             self.calculation = Calculation::default();
@@ -115,10 +230,25 @@ impl Calculator {
 
 impl Calculator {
     fn on_event(&mut self, evt: &ButtonEvent, cx: &mut Context<Self>) {
+        println!("event {:?}", evt);
         match evt {
             ButtonEvent::Number(val) => {
                 self.append_number(*val, cx);
             }
+            ButtonEvent::Operation(op) => match op {
+                Operation::Equals => {
+                    self.calculation.calculate();
+                    cx.notify();
+                }
+                _ => {
+                    self.calculation.append_operation(op.clone());
+                    cx.notify();
+                }
+            },
+            ButtonEvent::Clear => {
+                self.remove_or_clear(cx);
+            }
+            _ => {}
         }
     }
 
@@ -126,25 +256,37 @@ impl Calculator {
         match a {
             CalculatorAction::Backspace => {
                 self.remove_or_clear(cx);
+
+                self.ac_btn.update(cx, |btn, cx| btn.set_clicked(cx));
             }
             CalculatorAction::Calculate => {
                 self.calculation.calculate();
                 cx.notify();
+
+                self.equals_btn.update(cx, |btn, cx| btn.set_clicked(cx));
             }
             CalculatorAction::Op(Operation::Addition) => {
                 self.calculation
                     .append_operation(OperationButton::Plus.into());
                 cx.notify();
+
+                self.addition_btn.update(cx, |btn, cx| btn.set_clicked(cx));
             }
             CalculatorAction::Op(Operation::Subtraction) => {
                 self.calculation
                     .append_operation(OperationButton::Minus.into());
                 cx.notify();
+
+                self.subtraction_btn
+                    .update(cx, |btn, cx| btn.set_clicked(cx));
             }
             CalculatorAction::Op(Operation::Multiplication) => {
                 self.calculation
                     .append_operation(OperationButton::Times.into());
                 cx.notify();
+
+                self.multiplication_btn
+                    .update(cx, |btn, cx| btn.set_clicked(cx));
             }
             CalculatorAction::Op(Operation::Division) => {
                 self.calculation
@@ -152,8 +294,20 @@ impl Calculator {
                 cx.notify();
             }
             &CalculatorAction::Numeric(val) => {
-                self.dino_btn.update(cx, |btn, cx| btn.set_clicked(cx));
                 self.append_number(val, cx);
+                match val {
+                    0 => self.zero_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    1 => self.one_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    2 => self.two_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    3 => self.three_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    4 => self.four_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    5 => self.five_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    6 => self.six_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    7 => self.seven_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    8 => self.eight_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    9 => self.nine_btn.update(cx, |btn, cx| btn.set_clicked(cx)),
+                    _ => {}
+                };
             }
             _ => {}
         }
@@ -162,123 +316,38 @@ impl Calculator {
 
 impl Render for Calculator {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let light_gray = rgb(0x707070);
-        let dark_gray = rgb(0x515251);
-        let orange = rgb(0xff9600);
+        self.ac_btn
+            .update(cx, |btn, _| btn.label(self.render_ac_label()));
 
-        let ac_btn = RoundButton::new("ac_btn", "AC".into(), Some(light_gray));
-        let plus_minus_btn = RoundButton::new("plus_minus_btn", "±".into(), Some(light_gray));
-        let percent_btn = RoundButton::new("percent_btn", "％".into(), Some(light_gray));
-        let division_btn = RoundButton::new(
-            "division_btn",
-            OperationButton::Division.into(),
-            Some(orange),
-        );
-
-        let seven_btn = RoundButton::new("seven_btn", "7".into(), Some(dark_gray));
-        let eight_btn = RoundButton::new("eight_btn", "8".into(), Some(dark_gray));
-        let nine_btn = RoundButton::new("nine_btn", "9".into(), Some(dark_gray));
-        let times_btn = RoundButton::new("times_btn", OperationButton::Times.into(), Some(orange));
-
-        let four_btn = RoundButton::new("four_btn", "4".into(), Some(dark_gray));
-        let five_btn = RoundButton::new("five_btn", "5".into(), Some(dark_gray));
-        let six_btn = RoundButton::new("six_btn", "6".into(), Some(dark_gray));
-        let minus_btn = RoundButton::new("minus_btn", "－".into(), Some(orange));
-
-        let one_btn = RoundButton::new("one_btn", "1".into(), Some(dark_gray));
-        let two_btn = RoundButton::new("two_btn", "2".into(), Some(dark_gray));
-        let three_btn = RoundButton::new("three_btn", "3".into(), Some(dark_gray));
-        let plus_btn = RoundButton::new("plus_btn", "＋".into(), Some(orange));
-
-        let calc_btn = RoundButton::new("calc_btn", "calc".into(), Some(dark_gray));
-        let zero_btn = RoundButton::new("zero_btn", "0".into(), Some(dark_gray));
-        let comma_btn = RoundButton::new("comma_btn", ",".into(), Some(dark_gray));
-        let equals_btn =
-            RoundButton::new("equals_btn", OperationButton::Equals.into(), Some(orange));
-
-        let btns: Vec<RoundButton> = vec![
+        let btns: Vec<Entity<CalculatorButton>> = vec![
             // Row 1
-            ac_btn.label(self.render_ac_label()).on_click(
-                cx.listener(|this, evt, _, cx| Self::handle_ac_press(this, Button::Ac, evt, cx)),
-            ),
-            plus_minus_btn,
-            percent_btn,
-            division_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_operation_press(
-                    this,
-                    Button::Operation(OperationButton::Division),
-                    evt,
-                    cx,
-                );
-            })),
+            // ac_btn.label(self.render_ac_label()).on_click(
+            //     cx.listener(|this, evt, _, cx| Self::handle_ac_press(this, Button::Ac, evt, cx)),
+            // ),
+            self.ac_btn.clone(),
+            self.plus_minus_btn.clone(),
+            self.percent_btn.clone(),
+            self.division_btn.clone(),
             // Row 2
-            seven_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Seven), evt, cx)
-            })),
-            eight_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Eight), evt, cx)
-            })),
-            nine_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Nine), evt, cx)
-            })),
-            times_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_operation_press(
-                    this,
-                    Button::Operation(OperationButton::Times),
-                    evt,
-                    cx,
-                );
-            })),
+            self.seven_btn.clone(),
+            self.eight_btn.clone(),
+            self.nine_btn.clone(),
+            self.multiplication_btn.clone(),
             // Row 3
-            four_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Four), evt, cx)
-            })),
-            five_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Five), evt, cx)
-            })),
-            six_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Six), evt, cx)
-            })),
-            minus_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_operation_press(
-                    this,
-                    Button::Operation(OperationButton::Minus),
-                    evt,
-                    cx,
-                );
-            })),
+            self.four_btn.clone(),
+            self.five_btn.clone(),
+            self.six_btn.clone(),
+            self.subtraction_btn.clone(),
             // Row 4
-            one_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::One), evt, cx)
-            })),
-            two_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Two), evt, cx)
-            })),
-            three_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Three), evt, cx)
-            })),
-            plus_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_operation_press(
-                    this,
-                    Button::Operation(OperationButton::Plus),
-                    evt,
-                    cx,
-                );
-            })),
-            // Row 5
-            calc_btn,
-            zero_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_number_press(this, Button::Number(NumericButton::Zero), evt, cx)
-            })),
-            comma_btn,
-            equals_btn.on_click(cx.listener(|this, evt, _, cx| {
-                Self::handle_operation_press(
-                    this,
-                    Button::Operation(OperationButton::Equals),
-                    evt,
-                    cx,
-                );
-            })),
+            self.one_btn.clone(),
+            self.two_btn.clone(),
+            self.three_btn.clone(),
+            self.addition_btn.clone(),
+            // Row 5,
+            self.calc_btn.clone(),
+            self.zero_btn.clone(),
+            self.comma_btn.clone(),
+            self.equals_btn.clone(),
         ];
 
         div()
@@ -313,7 +382,6 @@ impl Render for Calculator {
                     .items_center()
                     .gap(px(5.))
                     .children(btns),
-                div().child(self.dino_btn.clone()),
             ])
     }
 }
@@ -353,19 +421,8 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("6", CalculatorAction::Numeric(6), Some(CONTEXT)),
         KeyBinding::new("7", CalculatorAction::Numeric(7), Some(CONTEXT)),
         KeyBinding::new("8", CalculatorAction::Numeric(8), Some(CONTEXT)),
-        KeyBinding::new("9", CalculatorAction::Numeric(8), Some(CONTEXT)),
+        KeyBinding::new("9", CalculatorAction::Numeric(9), Some(CONTEXT)),
     ]);
-}
-
-#[derive(Debug)]
-pub enum Button {
-    Number(NumericButton),
-    Operation(OperationButton),
-    Ac,
-    PlusMinus,
-    Percent,
-    Calc,
-    Comma,
 }
 
 #[derive(Debug)]
@@ -448,5 +505,3 @@ enum CalculatorAction {
 }
 
 impl_actions!(calculator, [CalculatorAction]);
-
-actions!(calculator, [MyTestAction]);
