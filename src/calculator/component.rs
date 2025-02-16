@@ -230,7 +230,6 @@ impl Calculator {
 
 impl Calculator {
     fn on_event(&mut self, evt: &ButtonEvent, cx: &mut Context<Self>) {
-        println!("event {:?}", evt);
         match evt {
             ButtonEvent::Number(val) => {
                 self.append_number(*val, cx);
