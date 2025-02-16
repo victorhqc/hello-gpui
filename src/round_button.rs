@@ -37,12 +37,6 @@ impl RoundButton {
         self.on_click = Some(Box::new(handler));
         self
     }
-
-    pub fn label(mut self, label: SharedString) -> Self {
-        self.label = label;
-
-        self
-    }
 }
 
 impl RenderOnce for RoundButton {
