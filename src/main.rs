@@ -53,16 +53,6 @@ fn main() {
             cx.new(|c| calculator::component::Calculator::new(window, c))
         })
         .unwrap();
-
-        // let view = window.entity(cx).unwrap();
-        // cx.observe_keystrokes(move |ev, _, cx| {
-        //     view.update(cx, |view, cx| {
-        //         println!("Keystroke {}", ev.keystroke);
-        //         // view.recent_keystrokes.push(ev.keystroke.clone());
-        //         cx.notify();
-        //     })
-        // })
-        // .detach();
     });
 }
 
