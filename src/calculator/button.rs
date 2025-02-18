@@ -1,6 +1,7 @@
 use crate::round_button::RoundButton;
 use gpui::{
-    div, prelude::*, rgba, ClickEvent, Context, EventEmitter, Rgba, SharedString, Timer, Window,
+    div, prelude::*, rgb, rgba, svg, ClickEvent, Context, EventEmitter, Rgba, SharedString, Timer,
+    Window,
 };
 use std::time::Duration;
 
@@ -8,15 +9,21 @@ use super::calculation::Operation;
 
 const DELAY: Duration = Duration::from_millis(50);
 
+#[derive(Clone)]
+pub enum ButtonLabel {
+    String(SharedString),
+    Svg(String),
+}
+
 pub struct Button {
-    label: SharedString,
+    label: ButtonLabel,
     color: Rgba,
     is_active: bool,
     event_to_emit: Event,
 }
 
 impl Button {
-    pub fn new(label: SharedString, color: Rgba, event_to_emit: Event) -> Self {
+    pub fn new(label: ButtonLabel, color: Rgba, event_to_emit: Event) -> Self {
         Button {
             label,
             color,
@@ -46,8 +53,17 @@ impl Button {
         cx.emit(self.event_to_emit.clone());
     }
 
-    pub fn label(&mut self, label: SharedString) {
+    pub fn label(&mut self, label: ButtonLabel) {
         self.label = label;
+    }
+
+    pub fn render_label(&mut self) -> impl IntoElement {
+        match &self.label {
+            ButtonLabel::String(str) => div().child(str.clone()),
+            ButtonLabel::Svg(path) => {
+                div().child(svg().path(path).mt_1().size_4().text_color(rgb(0xffffff)))
+            }
+        }
     }
 }
 
@@ -59,7 +75,7 @@ impl Render for Button {
             self.color
         };
 
-        let btn = RoundButton::new("btn", self.label.clone(), Some(color));
+        let btn = RoundButton::new("btn", self.render_label(), Some(color));
 
         div().child(btn.on_click(cx.listener(|this, evt, _, cx| {
             Self::handle_click(this, evt, cx);

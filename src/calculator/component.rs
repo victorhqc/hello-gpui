@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use super::{
-    button::{Button as CalculatorButton, Event as ButtonEvent},
+    button::{Button as CalculatorButton, ButtonLabel, Event as ButtonEvent},
     calculation::{Calculation, Operation},
 };
 use gpui::{
@@ -40,103 +40,180 @@ impl Calculator {
         let dark_gray = rgb(0x515251);
         let orange = rgb(0xff9600);
 
-        let ac_btn = cx.new(|_| CalculatorButton::new("AC".into(), light_gray, ButtonEvent::Clear));
+        let ac_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("AC".into()),
+                light_gray,
+                ButtonEvent::Clear,
+            )
+        });
         Self::subscribe_btn(&ac_btn, cx);
 
-        let plus_minus_btn =
-            cx.new(|_| CalculatorButton::new("±".into(), light_gray, ButtonEvent::PlusMinus));
+        let plus_minus_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("±".into()),
+                light_gray,
+                ButtonEvent::PlusMinus,
+            )
+        });
         Self::subscribe_btn(&plus_minus_btn, cx);
 
-        let percent_btn =
-            cx.new(|_| CalculatorButton::new("%".into(), light_gray, ButtonEvent::Percent));
+        let percent_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("%".into()),
+                light_gray,
+                ButtonEvent::Percent,
+            )
+        });
         Self::subscribe_btn(&percent_btn, cx);
 
         let division_btn = cx.new(|_| {
             CalculatorButton::new(
-                OperationButton::Division.into(),
+                ButtonLabel::String(OperationButton::Division.into()),
                 orange,
                 ButtonEvent::Operation(Operation::Division),
             )
         });
         Self::subscribe_btn(&division_btn, cx);
 
-        let seven_btn =
-            cx.new(|_| CalculatorButton::new("7".into(), dark_gray, ButtonEvent::Number(7)));
+        let seven_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("7".into()),
+                dark_gray,
+                ButtonEvent::Number(7),
+            )
+        });
         Self::subscribe_btn(&seven_btn, cx);
 
-        let eight_btn =
-            cx.new(|_| CalculatorButton::new("8".into(), dark_gray, ButtonEvent::Number(8)));
+        let eight_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("8".into()),
+                dark_gray,
+                ButtonEvent::Number(8),
+            )
+        });
         Self::subscribe_btn(&eight_btn, cx);
 
-        let nine_btn =
-            cx.new(|_| CalculatorButton::new("9".into(), dark_gray, ButtonEvent::Number(9)));
+        let nine_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("9".into()),
+                dark_gray,
+                ButtonEvent::Number(9),
+            )
+        });
         Self::subscribe_btn(&nine_btn, cx);
 
         let multiplication_btn = cx.new(|_| {
             CalculatorButton::new(
-                OperationButton::Times.into(),
+                ButtonLabel::String(OperationButton::Times.into()),
                 orange,
                 ButtonEvent::Operation(Operation::Multiplication),
             )
         });
         Self::subscribe_btn(&multiplication_btn, cx);
 
-        let four_btn =
-            cx.new(|_| CalculatorButton::new("4".into(), dark_gray, ButtonEvent::Number(4)));
+        let four_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("4".into()),
+                dark_gray,
+                ButtonEvent::Number(4),
+            )
+        });
         Self::subscribe_btn(&four_btn, cx);
 
-        let five_btn =
-            cx.new(|_| CalculatorButton::new("5".into(), dark_gray, ButtonEvent::Number(5)));
+        let five_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("5".into()),
+                dark_gray,
+                ButtonEvent::Number(5),
+            )
+        });
         Self::subscribe_btn(&five_btn, cx);
 
-        let six_btn =
-            cx.new(|_| CalculatorButton::new("6".into(), dark_gray, ButtonEvent::Number(6)));
+        let six_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("6".into()),
+                dark_gray,
+                ButtonEvent::Number(6),
+            )
+        });
         Self::subscribe_btn(&six_btn, cx);
 
         let subtraction_btn = cx.new(|_| {
             CalculatorButton::new(
-                "－".into(),
+                ButtonLabel::String("－".into()),
                 orange,
                 ButtonEvent::Operation(Operation::Subtraction),
             )
         });
         Self::subscribe_btn(&subtraction_btn, cx);
 
-        let one_btn =
-            cx.new(|_| CalculatorButton::new("1".into(), dark_gray, ButtonEvent::Number(1)));
+        let one_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("1".into()),
+                dark_gray,
+                ButtonEvent::Number(1),
+            )
+        });
         Self::subscribe_btn(&one_btn, cx);
 
-        let two_btn =
-            cx.new(|_| CalculatorButton::new("2".into(), dark_gray, ButtonEvent::Number(2)));
+        let two_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("2".into()),
+                dark_gray,
+                ButtonEvent::Number(2),
+            )
+        });
         Self::subscribe_btn(&two_btn, cx);
 
-        let three_btn =
-            cx.new(|_| CalculatorButton::new("3".into(), dark_gray, ButtonEvent::Number(3)));
+        let three_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("3".into()),
+                dark_gray,
+                ButtonEvent::Number(3),
+            )
+        });
         Self::subscribe_btn(&three_btn, cx);
 
         let addition_btn = cx.new(|_| {
             CalculatorButton::new(
-                "＋".into(),
+                ButtonLabel::String("＋".into()),
                 orange,
                 ButtonEvent::Operation(Operation::Addition),
             )
         });
         Self::subscribe_btn(&addition_btn, cx);
 
-        let calc_btn =
-            cx.new(|_| CalculatorButton::new("calc".into(), dark_gray, ButtonEvent::Noop));
+        let calc_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::Svg("rocket.svg".to_string()),
+                dark_gray,
+                ButtonEvent::Noop,
+            )
+        });
         Self::subscribe_btn(&calc_btn, cx);
 
-        let zero_btn =
-            cx.new(|_| CalculatorButton::new("0".into(), dark_gray, ButtonEvent::Number(0)));
+        let zero_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String("0".into()),
+                dark_gray,
+                ButtonEvent::Number(0),
+            )
+        });
         Self::subscribe_btn(&zero_btn, cx);
 
-        let comma_btn = cx.new(|_| CalculatorButton::new(",".into(), dark_gray, ButtonEvent::Noop));
+        let comma_btn = cx.new(|_| {
+            CalculatorButton::new(
+                ButtonLabel::String(",".into()),
+                dark_gray,
+                ButtonEvent::Noop,
+            )
+        });
         Self::subscribe_btn(&comma_btn, cx);
 
         let equals_btn = cx.new(|_| {
             CalculatorButton::new(
-                OperationButton::Equals.into(),
+                ButtonLabel::String(OperationButton::Equals.into()),
                 orange,
                 ButtonEvent::Operation(Operation::Equals),
             )
@@ -219,12 +296,12 @@ impl Calculator {
             .child(self.calculation.past_operations_string())
     }
 
-    fn render_ac_label(&self) -> SharedString {
+    fn render_ac_label(&self) -> ButtonLabel {
         if self.calculation.is_empty() {
-            return "AC".into();
+            return ButtonLabel::String("AC".into());
         }
 
-        "<-".into()
+        ButtonLabel::Svg("undo.svg".to_string())
     }
 }
 

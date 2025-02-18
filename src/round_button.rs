@@ -1,6 +1,4 @@
-use gpui::{
-    div, prelude::*, px, rgb, rgba, App, ClickEvent, ElementId, Rgba, SharedString, Window,
-};
+use gpui::{div, prelude::*, px, rgb, rgba, AnyElement, App, ClickEvent, ElementId, Rgba, Window};
 
 pub type ClickFn = dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static;
 
@@ -11,18 +9,18 @@ pub struct RoundButton {
     active_bg: Rgba,
     is_disabled: bool,
     on_click: Option<Box<ClickFn>>,
-    label: SharedString,
+    label: AnyElement,
 }
 
 impl RoundButton {
-    pub fn new(id: impl Into<ElementId>, label: SharedString, bg: Option<Rgba>) -> Self {
+    pub fn new(id: impl Into<ElementId>, label: impl IntoElement, bg: Option<Rgba>) -> Self {
         let bg = bg.unwrap_or_else(|| rgb(0x000000));
 
         let active_bg = bg.blend(rgba(0xffffff30));
 
         RoundButton {
             id: id.into(),
-            label,
+            label: label.into_any_element(),
             bg,
             active_bg,
             is_disabled: false,

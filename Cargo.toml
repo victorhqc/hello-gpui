@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.95"
 dashu = "0.4.2"
 dashu-base = "0.4.1"
 dashu-float = "0.4.3"
