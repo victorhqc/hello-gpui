@@ -90,6 +90,7 @@ pub enum Event {
     PlusMinus,
     Percent,
     Operation(Operation),
+    Comma,
     Noop,
 }
 

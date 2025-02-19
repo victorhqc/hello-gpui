@@ -206,7 +206,7 @@ impl Calculator {
             CalculatorButton::new(
                 ButtonLabel::String(",".into()),
                 dark_gray,
-                ButtonEvent::Noop,
+                ButtonEvent::Comma,
             )
         });
         Self::subscribe_btn(&comma_btn, cx);
@@ -269,6 +269,16 @@ impl Calculator {
         cx.notify();
     }
 
+    fn add_comma(&mut self, cx: &mut Context<Self>) {
+        if self.calculation.is_empty() {
+            self.calculation = Calculation::default();
+        }
+
+        self.calculation.add_comma();
+
+        cx.notify();
+    }
+
     fn remove_or_clear(&mut self, cx: &mut Context<Self>) {
         if self.calculation.is_empty() {
             self.calculation = Calculation::default();
@@ -323,6 +333,9 @@ impl Calculator {
             },
             ButtonEvent::Clear => {
                 self.remove_or_clear(cx);
+            }
+            ButtonEvent::Comma => {
+                self.add_comma(cx);
             }
             _ => {}
         }
@@ -385,6 +398,10 @@ impl Calculator {
                     _ => {}
                 };
             }
+            CalculatorAction::Comma => {
+                self.add_comma(cx);
+                self.comma_btn.update(cx, |btn, cx| btn.set_clicked(cx));
+            }
             _ => {}
         }
     }
@@ -397,9 +414,6 @@ impl Render for Calculator {
 
         let btns: Vec<Entity<CalculatorButton>> = vec![
             // Row 1
-            // ac_btn.label(self.render_ac_label()).on_click(
-            //     cx.listener(|this, evt, _, cx| Self::handle_ac_press(this, Button::Ac, evt, cx)),
-            // ),
             self.ac_btn.clone(),
             self.plus_minus_btn.clone(),
             self.percent_btn.clone(),
@@ -498,21 +512,9 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("7", CalculatorAction::Numeric(7), Some(CONTEXT)),
         KeyBinding::new("8", CalculatorAction::Numeric(8), Some(CONTEXT)),
         KeyBinding::new("9", CalculatorAction::Numeric(9), Some(CONTEXT)),
+        KeyBinding::new(",", CalculatorAction::Comma, Some(CONTEXT)),
+        KeyBinding::new(".", CalculatorAction::Comma, Some(CONTEXT)),
     ]);
-}
-
-#[derive(Debug)]
-pub enum NumericButton {
-    One,
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Zero,
 }
 
 #[derive(Debug)]
@@ -522,23 +524,6 @@ pub enum OperationButton {
     Minus,
     Plus,
     Equals,
-}
-
-impl From<NumericButton> for usize {
-    fn from(value: NumericButton) -> Self {
-        match value {
-            NumericButton::Zero => 0,
-            NumericButton::One => 1,
-            NumericButton::Two => 2,
-            NumericButton::Three => 3,
-            NumericButton::Four => 4,
-            NumericButton::Five => 5,
-            NumericButton::Six => 6,
-            NumericButton::Seven => 7,
-            NumericButton::Eight => 8,
-            NumericButton::Nine => 9,
-        }
-    }
 }
 
 impl Display for OperationButton {
@@ -577,6 +562,7 @@ enum CalculatorAction {
     Op(Operation),
     Calculate,
     Backspace,
+    Comma,
     NoAction,
 }
 
