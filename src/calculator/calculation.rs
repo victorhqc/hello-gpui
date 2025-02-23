@@ -118,7 +118,6 @@ impl Calculation {
                     }
 
                     if val.has_comma() {
-                        println!("ADDING WITH COMMA");
                         let stringified = val.val().to_string();
 
                         let appended = format!("{}.{}", stringified, num);
@@ -130,20 +129,16 @@ impl Calculation {
                         return;
                     }
 
-                    println!("REGULAR ADDING {}", val.val());
-
                     let (trunc, fract) = val.val().clone().split_at_point();
                     let fract_precision = fract.precision();
                     let trunc_precision = trunc.precision();
                     let precision = 1 + trunc_precision + fract_precision;
 
                     let zero = dbig!(0);
-                    let (trunc, fract) = if fract.gt(&zero) && trunc.ne(&zero) {
-                        println!("whatup, {} -- {}", trunc, fract);
+                    let (trunc, fract) = if fract.gt(&zero) {
                         let stringified = fract.to_string();
 
                         let appended = format!("{}{}", stringified, num);
-                        println!("appended: {}", appended);
 
                         (trunc.to_string(), appended)
                     } else {
@@ -227,30 +222,47 @@ impl Calculation {
 
             let val = operand.value.clone();
 
-            if val.eq(&OperandValue::Number(NumericValue::new(dbig!(0)))) {
-                if operands_len > 1 {
-                    self.operands.pop();
+            match val {
+                OperandValue::Number(ref num) => {
+                    let was_float = num.is_float();
+
+                    if num.eq(&NumericValue::new(dbig!(0))) {
+                        if operands_len > 1 {
+                            self.operands.pop();
+                        }
+
+                        return;
+                    };
+
+                    let mut new_value = format!("{}", num);
+                    new_value.pop();
+
+                    if new_value.is_empty() && operands_len > 1 {
+                        self.operands.pop();
+                        return;
+                    }
+
+                    let new_value = if new_value.is_empty() {
+                        "0".to_string()
+                    } else {
+                        new_value
+                    };
+
+                    let new_value = DBig::from_str(&new_value).unwrap();
+                    let num_value = NumericValue::new(new_value.clone());
+                    let is_float = num_value.is_float();
+
+                    if was_float && !is_float {
+                        operand.value =
+                            OperandValue::Number(NumericValue::new_with_comma(new_value));
+                    } else {
+                        operand.value = OperandValue::Number(num_value);
+                    }
                 }
-
-                return;
-            };
-
-            let mut new_value = format!("{}", val);
-            new_value.pop();
-
-            if new_value.is_empty() && operands_len > 1 {
-                self.operands.pop();
-                return;
+                OperandValue::Undefined => {
+                    operand.value = OperandValue::default();
+                }
             }
-
-            let new_value = if new_value.is_empty() {
-                "0".to_string()
-            } else {
-                new_value
-            };
-
-            let new_value = DBig::from_str(&new_value).unwrap();
-            operand.value = OperandValue::Number(NumericValue::new(new_value));
         };
     }
 }
@@ -454,7 +466,7 @@ mod test_sum_calculation {
                     },
                     Operand {
                         operation: Some(Operation::Addition),
-                        value: OperandValue::Number(NumericValue::new(dbig!(5.5))),
+                        value: OperandValue::Number(NumericValue::new(dbig!(5))),
                     },
                     Operand {
                         operation: None,
@@ -508,30 +520,77 @@ mod test_sum_calculation {
     }
 }
 
-// #[cfg(test)]
-// mod test_append_number {
-//     use super::*;
+#[cfg(test)]
+mod test_append_number {
+    use super::*;
 
-//     #[test]
-//     fn append_when_empty() {
-//         let mut calculation = Calculation {
-//             past_operands: vec![],
-//             operands: Vec::new(),
-//         };
+    #[test]
+    fn append_when_empty() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: Vec::new(),
+        };
 
-//         calculation.append_number(5);
-//         assert_eq!(
-//             calculation,
-//             Calculation {
-//                 past_operands: vec![],
-//                 operands: vec![Operand {
-//                     operation: None,
-//                     value: OperandValue::Decimal(dbig!(5)),
-//                 }],
-//             }
-//         );
-//     }
-// }
+        calculation.append_number(5);
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(5))),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn append_with_comma() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Number(NumericValue::new_with_comma(dbig!(5))),
+            }],
+        };
+
+        calculation.append_number(5);
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(5.5))),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn append_zero_with_comma() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Number(NumericValue::new_with_comma(dbig!(0))),
+            }],
+        };
+
+        calculation.append_number(5);
+        calculation.append_number(5);
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(0.55))),
+                }],
+            }
+        );
+    }
+}
 
 #[cfg(test)]
 mod append_operation {
@@ -728,5 +787,136 @@ mod test_is_empty {
         };
 
         assert!(!calculation.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod test_remove_last {
+    use super::*;
+
+    #[test]
+    fn remove_when_having_number() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Number(NumericValue::new(dbig!(155))),
+            }],
+        };
+
+        calculation.remove_last();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(15))),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn remove_to_reach_zero() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Number(NumericValue::new(dbig!(155))),
+            }],
+        };
+
+        calculation.remove_last();
+        calculation.remove_last();
+        calculation.remove_last();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(0))),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn remove_does_not_get_further_than_zero() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Number(NumericValue::new(dbig!(155))),
+            }],
+        };
+
+        calculation.remove_last();
+        calculation.remove_last();
+        calculation.remove_last();
+        calculation.remove_last();
+        calculation.remove_last();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(0))),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn removes_operation_before_number() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: Some(Operation::Addition),
+                value: OperandValue::Number(NumericValue::new(dbig!(155))),
+            }],
+        };
+
+        calculation.remove_last();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new(dbig!(155))),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn remove_when_float_leaves_the_comma() {
+        let mut calculation = Calculation {
+            past_operands: vec![],
+            operands: vec![Operand {
+                operation: None,
+                value: OperandValue::Number(NumericValue::new(dbig!(155.5))),
+            }],
+        };
+
+        calculation.remove_last();
+
+        assert_eq!(
+            calculation,
+            Calculation {
+                past_operands: vec![],
+                operands: vec![Operand {
+                    operation: None,
+                    value: OperandValue::Number(NumericValue::new_with_comma(dbig!(155))),
+                }],
+            }
+        );
     }
 }
